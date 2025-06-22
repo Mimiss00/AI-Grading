@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: flask-frontend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python mainSignUp.py"
+    plan: free
+    envVars:
+      - key: OPENAI_API_KEY
+        value: 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
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: fyp-ai-3a972-OCR_API.json
+
+  - type: worker
+    name: background-grader
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python auto_grading_server.py"
+    plan: free
+    envVars:
+      - key: OPENAI_API_KEY
+        value: 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
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: fyp-ai-3a972-OCR_API.json
