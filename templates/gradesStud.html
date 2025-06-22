@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Grades - MiGrade</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      display: flex;
+      background: #f4f6f9;
+      min-height: 100vh;
+    }
+
+    .side-menu {
+      background: #2c3e50;
+      width: 240px;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #fff;
+    }
+
+    .brand-name {
+      font-size: 26px;
+      margin-bottom: 40px;
+      letter-spacing: 1px;
+    }
+
+    .side-menu ul {
+      width: 100%;
+      list-style: none;
+    }
+
+    .side-menu li {
+      width: 100%;
+      padding: 15px 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: background 0.3s;
+    }
+
+    .side-menu li:hover {
+      background: #34495e;
+    }
+
+    .side-menu a {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 40px;
+      background: #f4f6f9;
+    }
+
+    h2 {
+      font-size: 28px;
+      color: #34495e;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 16px 20px;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    th {
+      background: #34495e;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    tr:hover {
+      background: #f1f1f1;
+    }
+
+    .btn-download {
+      display: inline-block;
+      background: #3498db;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .btn-download:hover {
+      background: #2c80b4;
+    }
+
+    /* Modal styling */
+    #feedbackModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #feedbackModal .modal-box {
+      background: white;
+      max-width: 800px;
+      width: 90%;
+      padding: 30px;
+      border-radius: 10px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    #feedbackModal pre {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    #feedbackModal .close-btn {
+      margin-top: 20px;
+      padding: 10px 16px;
+      background: #f05462;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+  <div class="side-menu">
+    <div class="brand-name">MiGrade</div>
+    <ul>
+      <a href="/student/dashboard"><li><img src="/static/icon/dashboard.png" alt="" style="width:20px; margin-right:10px;"> Dashboard</li></a>
+      <a href="/student/my-assignment"><li><img src="/static/icon/icons8-assignment-50.png" alt="" style="width:20px; margin-right:10px;"> Assignments</li></a>
+      <a href="/student/gradeStud"><li><img src="/static/icon/icons8-bar-chart-50.png" alt="" style="width:20px; margin-right:10px;"> My Grades</li></a>
+      <a href="/templates/roleSelect.html"><li><img src="/static/icon/settings.png" alt="" style="width:20px; margin-right:10px;"> Logout</li></a>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h2>📚 My Grades</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Assignment</th>
+          <th>Grade</th>
+          <th>Feedback</th>
+          <th>Graded PDF</th>
+        </tr>
+      </thead>
+      <tbody id="gradesTable">
+        <!-- Grades will appear here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 15px;">📝 Full Feedback</h3>
+      <pre id="modalFeedback">Loading...</pre>
+      <button class="close-btn" onclick="closeFeedbackModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+      authDomain: "fyp-ai-3a972.firebaseapp.com",
+      projectId: "fyp-ai-3a972",
+      storageBucket: "fyp-ai-3a972.firebasestorage.app",
+      messagingSenderId: "1095317736019",
+      appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const gradesTable = document.getElementById('gradesTable');
+
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        const userEmail = user.email;
+
+        try {
+          const studentQuery = await db.collection('students')
+            .where('email', '==', userEmail)
+            .limit(1)
+            .get();
+
+          if (!studentQuery.empty) {
+            const studentDoc = studentQuery.docs[0];
+            const studentData = studentDoc.data();
+            const studentID = studentData.studentID || studentData.matric;
+
+            db.collection('submissions')
+              .where('studentID', '==', studentID)
+              .where('status', '==', 'Released')
+              .orderBy('submittedAt', 'desc')
+              .onSnapshot(snapshot => {
+                gradesTable.innerHTML = "";
+                snapshot.forEach(doc => {
+                  const data = doc.data();
+                  const assignmentName = data.assignmentName || "-";
+                  const grade = data.grade || "-";
+                  const feedback = data.feedback || "-";
+                  const gradingFileURL = data.gradingFileURL || null;
+
+                  const summaryOnly = feedback.split("Final Feedback:")[1]?.trim().split("\n")[0] || "Feedback available";
+                  const feedbackId = `fb_${doc.id}`;
+
+                  const row = document.createElement('tr');
+                  row.innerHTML = `
+                    <td>${assignmentName}</td>
+                    <td>${grade}</td>
+                    <td>
+                      <button class="btn-download" onclick="showFeedbackModal('${feedbackId}')">View Feedback</button>
+                      <div id="${feedbackId}" style="display:none;">${feedback.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    </td>
+                    <td>
+                      ${gradingFileURL ? `<a href="${gradingFileURL}" target="_blank" class="btn-download">View</a>` : '-'}
+                    </td>
+                  `;
+                  gradesTable.appendChild(row);
+                });
+              });
+
+          } else {
+            console.error("❌ No student found with this email.");
+          }
+        } catch (error) {
+          console.error("❌ Error fetching student:", error);
+        }
+      } else {
+        window.location.href = '/login.html';
+      }
+    });
+
+    function showFeedbackModal(id) {
+      const content = document.getElementById(id)?.innerText || "Feedback not found.";
+      document.getElementById('modalFeedback').innerText = content;
+      document.getElementById('feedbackModal').style.display = 'flex';
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>

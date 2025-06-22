@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MiGrade Dashboard</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f5f7fa;
+      color: #1e1e2f;
+      overflow-x: hidden;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 40px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar a {
+      color: #cfd8dc;
+      text-decoration: none;
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+
+    .sidebar a i {
+      margin-right: 12px;
+      font-size: 18px;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .main {
+      flex: 1;
+      padding: 40px 60px;
+      overflow-x: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 50px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .search-box input {
+      padding: 12px 18px;
+      width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .btn-primary {
+      background-color: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px 25px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .card i {
+      font-size: 28px;
+      color: #3b82f6;
+    }
+
+    .recent-section {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+    }
+
+    .recent-section h2 {
+      margin-bottom: 20px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e1e2f;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+
+    thead {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    th, td {
+      padding: 16px;
+      font-size: 15px;
+      text-align: left;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    tbody tr:hover {
+      background: #eef2f7;
+    }
+
+    .view-link {
+      color: #3b82f6;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 20px;
+        height: auto;
+      }
+
+      .main { padding: 20px; }
+
+      .cards { grid-template-columns: 1fr; }
+
+      table, thead, tbody, th, td, tr { display: block; }
+
+      thead tr { display: none; }
+
+      tbody tr {
+        margin-bottom: 20px;
+        background: #fff;
+        border: 1px solid #eee;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      tbody td {
+        padding: 10px;
+        text-align: left;
+        position: relative;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <h1>MIGRADE</h1>
+      <a href="/lecturer/dashboard-edu"><i class="fas fa-house"></i> Dashboard</a>
+      <a href="/lecturer/my-classes"><i class="fas fa-file-signature"></i> Submission</a>
+      <a href="/lecturer/all-assignment"><i class="fas fa-book"></i> All Assignments</a>
+      <a href="/lecturer/upload-material"><i class="fas fa-upload"></i> Upload Material</a>
+      <a href="/templates/roleSelect.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="search-box">
+          <input type="text" placeholder="Search assignments..." />
+        </div>
+          <button class="btn-primary" onclick="window.location.href='/lecturer/upload-material'">Add Assignment</button>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div>
+            <h3>Students: <span id="studentsCount">0</span></h3>
+          </div>
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="card">
+          <div>
+            <h3>Assignments: <span id="assignmentsCount">0</span></h3>
+          </div>
+          <i class="fas fa-book-open"></i>
+        </div>
+      </div>
+
+      <div class="recent-section">
+        <h2>Recent Submissions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Student ID</th>
+              <th>Assignment</th>
+              <th>Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="recentSubmissionsBody">
+            <!-- Dynamic content -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase + Active Sidebar Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+      authDomain: "fyp-ai-3a972.firebaseapp.com",
+      projectId: "fyp-ai-3a972",
+      storageBucket: "fyp-ai-3a972.appspot.com",
+      messagingSenderId: "1095317736019",
+      appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function updateDashboard() {
+      const studentsSnapshot = await getDocs(collection(db, "students"));
+      const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
+      document.getElementById('studentsCount').innerText = studentsSnapshot.size;
+      document.getElementById('assignmentsCount').innerText = assignmentsSnapshot.size;
+
+      const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+      const tableBody = document.getElementById("recentSubmissionsBody");
+      tableBody.innerHTML = "";
+
+      submissionsSnapshot.forEach(doc => {
+        const data = doc.data();
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td data-label="Student Name">${data.studentName || '-'}</td>
+          <td data-label="Student ID">${data.studentID || '-'}</td>
+          <td data-label="Assignment">${data.assignmentName || '-'}</td>
+          <td data-label="Grade">${data.grade || '-'}</td>
+          <td data-label="Action"><a class="view-link" href="${data.fileURL || '#'}" target="_blank">View</a></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateDashboard);
+
+    // ✅ Highlight the correct sidebar link
+    const normalize = path => path.replace(/\/+$/, '').replace(/\.html$/, '');
+    const currentPath = normalize(window.location.pathname);
+
+    document.querySelectorAll('.sidebar a').forEach(link => {
+      const href = normalize(link.getAttribute('href'));
+      if (currentPath.endsWith(href)) {
+        link.classList.add('active');
+      }
+    });
+  </script>
+</body>
+</html>

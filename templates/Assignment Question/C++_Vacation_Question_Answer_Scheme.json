@@ -1,0 +1,20 @@
+{
+    "question": {
+        "title": "C++ Vacation Calculation Program - Question and Marking Scheme",
+        "text": "C++ Vacation Calculation Program - Question and Marking Scheme Question (10 Marks Total) (C++) Vacation Calculation Program Given the following C++ code snippet intended to determine the number of weeks of vacation based on the number of years an employee has worked, answer the following: #include <iostream> using namespace std; int main() { double years; int Vacation; cout << \"Enter the years: \"; cin >> years; if (years == 0) Vacation = 0; else if (1 <= years && 5 <= years) Vacation = 1; else if (years >= 11) Vacation = 3; cout << \"Weeks of vacation: \" << Vacation << endl; return 0; } "
+    },
+    "answer_scheme": {
+        "part_a": [
+            "| Error Identified                               | Correction                                      | Marks |",
+            "|------------------------------------------------|--------------------------------------------------|-------|",
+            "| `int. Vacation;` is invalid syntax              | Change to `int Vacation;`                        | 1     |",
+            "| Missing semicolon after `Vacation = 0`         | Add `;` after `Vacation = 0`                     | 1     |",
+            "| Logical error in `else if (1 <= years && 5 <= years)` | Change to `else if (years >= 1 && years <= 5)`",
+            "| 2     |",
+            "| No condition for years between 6 and 10        | Mention the missing range                       | 1     |",
+            "| Incorrect variable casing `vacation` vs `Vacation` | Change `vacation` to `Vacation`              | 1     |"
+        ],
+        "part_b": "Condition matched: `years >= 11`, so: Output: Weeks of vacation: 3 - 1 mark for correct reasoning - 1 mark for correct output ",
+        "part_c": "Answer Scheme Suggest handling the case for `years >= 6 && years <= 10`: else if (years >= 6 && years <= 10) Vacation = 2; - 1 mark for logical condition - 1 mark for assigning appropriate vacation weeks (e.g., 2 weeks) "
+    }
+}

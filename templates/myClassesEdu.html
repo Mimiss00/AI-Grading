@@ -1,0 +1,474 @@
+<!-- Manage Submissions Without Feedback Column -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiGrade - Manage Submissions</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f5f7fa;
+      color: #1e1e2f;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+      color: white;
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+    .sidebar a {
+      color: #cfd8dc;
+      text-decoration: none;
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+    }
+    .sidebar a i {
+      margin-right: 12px;
+    }
+    .sidebar a:hover {
+      color: #fff;
+    }
+    .main {
+      flex: 1;
+      padding: 40px 60px;
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .topbar input, .topbar select {
+      padding: 10px 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .submission-section {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+    }
+    .submission-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    thead {
+      background: #3b82f6;
+      color: white;
+    }
+    th, td {
+      padding: 16px;
+      font-size: 14px;
+      text-align: left;
+    }
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+    .status-pending { background: #f0ad4e; color: white; padding: 4px 10px; border-radius: 4px; }
+    .status-graded { background: #5cb85c; color: white; padding: 4px 10px; border-radius: 4px; }
+    .status-released { background: #5bc0de; color: white; padding: 4px 10px; border-radius: 4px; }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      color: white;
+      margin-right: 6px;
+      cursor: pointer;
+    }
+    .btn-edit { background: #007bff; }
+    .btn-release { background: #28a745; }
+    .btn-download { background: #17a2b8; }
+    .btn-disabled { background: grey; cursor: not-allowed; }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 95%;
+      max-width: 800px;
+      height: 500px;         /* Viewport-based height limit */
+      overflow-y: auto;         /* Scroll if content is too tall */
+    }
+    .modal-content h3 {
+      margin-bottom: 15px;
+    }
+    .modal-content input, .modal-content textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .modal-content textarea {
+    min-height: 200px;
+    resize: vertical;
+  }
+
+    .modal-content button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .modal-content .save-btn {
+      background: #007bff;
+      color: white;
+      margin-right: 10px;
+    }
+    .modal-content .cancel-btn {
+      background: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <h1>MIGRADE</h1>
+    <a href="/lecturer/dashboard-edu"><i class="fas fa-house"></i> Dashboard</a>
+    <a href="/lecturer/my-classes"><i class="fas fa-file-signature"></i> Submission</a>
+    <a href="/lecturer/all-assignment"><i class="fas fa-book"></i> All Assignments</a>
+    <a href="/lecturer/upload-material"><i class="fas fa-upload"></i> Upload Material</a>
+    <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <input type="text" id="searchInput" placeholder="Search student or assignment...">
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Graded">Graded</option>
+        <option value="Released">Released</option>
+      </select>
+    </div>
+
+    <div class="submission-section">
+      <h2>📑 Assignment Submissions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Student ID</th>
+            <th>Assignment</th>
+            <th>Submitted On</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Graded File</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="submissionTable">
+          <!-- Dynamic rows -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h3>Edit Grade & Feedback</h3>
+    <input type="text" id="editGrade" placeholder="Enter Grade (e.g. 85/100)" />
+    <textarea id="editFeedback" placeholder="Enter Feedback"></textarea>
+    <button class="save-btn" onclick="saveEdit()">Save</button>
+    <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+    authDomain: "fyp-ai-3a972.firebaseapp.com",
+    projectId: "fyp-ai-3a972",
+    storageBucket: "fyp-ai-3a972.appspot.com",
+    messagingSenderId: "1095317736019",
+    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // DOM Elements
+  const submissionTable = document.getElementById('submissionTable');
+  const searchInput = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
+  let currentEditId = null;
+
+
+  // Standardize status values
+  function normalizeStatus(status) {
+  if (!status) return "Pending";
+  const lowerStatus = status.toLowerCase();
+  if (lowerStatus === "submitted") return "Pending";  // 🔄 This is key
+  if (lowerStatus === "graded") return "Graded";
+  if (lowerStatus === "released") return "Released";
+  return "Pending";
+}
+
+  // Format grade display
+  function formatGrade(grade) {
+    if (!grade) return "-";
+    if (grade.includes("/")) {
+      const [earned, total] = grade.split("/");
+      return total === "0" ? `${earned}/10` : grade;
+    }
+    return grade;
+  }
+
+  // Format date from Firestore timestamp
+  function formatDate(timestamp) {
+    if (!timestamp?.seconds) return "-";
+    return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+
+  // Generate action buttons based on status
+  function generateActions(id, status, grade = "", feedback = "") {
+    let actionsHTML = '';
+    const encodedFeedback = btoa(unescape(encodeURIComponent(feedback)));
+    
+    switch(status.toLowerCase()) {
+      case 'pending':
+        actionsHTML = `<button class="btn btn-grade" onclick="openEditModal('${id}', '${grade}', '${encodedFeedback}')">Grade</button>`;
+        break;
+      case 'graded':
+        actionsHTML = `
+          <button class="btn btn-edit" onclick="openEditModal('${id}', '${grade}', '${encodedFeedback}')">Edit</button>
+          <button class="btn btn-release" onclick="releaseStudent('${id}')">Release</button>
+        `;
+        break;
+      case 'released':
+        actionsHTML = '<span class="released-badge">Released</span>';
+        break;
+      default:
+        actionsHTML = '-';
+    }
+    return actionsHTML;
+  }
+
+  // Validate and normalize submission data
+  function validateSubmissionData(data) {
+    return {
+      studentName: data.studentName || "Unknown Student",
+      studentID: data.studentID || "00000000",
+      assignmentName: data.assignmentTitle || "Unnamed Assignment",
+      submittedAt: data.submittedAt || null,
+      status: data.status || "Pending",
+      grade: data.grade || "-",
+      gradingFileURL: data.gradingFileURL || null,
+      feedback: data.feedback || ""
+    };
+  }
+
+  // Fetch and display submissions
+  function fetchSubmissions() {
+    db.collection('submissions')
+      .orderBy('submittedAt', 'desc')
+      .onSnapshot(
+        (snapshot) => {
+          submissionTable.innerHTML = "";
+          
+          if (snapshot.empty) {
+            submissionTable.innerHTML = `
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 20px;">
+                  No submissions found
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          snapshot.forEach((doc) => {
+            try {
+              const data = validateSubmissionData(doc.data());
+              if (!data.submittedAt) return;
+
+              const status = normalizeStatus(data.status);
+              const grade = formatGrade(data.grade);
+              const actionsHTML = generateActions(doc.id, status, data.grade, data.feedback);
+
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${data.studentName}</td>
+                <td>${data.studentID || "-"}</td>
+                <td>${data.assignmentName}</td>
+                <td>${formatDate(data.submittedAt)}</td>
+                <td><span class="status-${status.toLowerCase()}">${status}</span></td>
+                <td>${grade}</td>
+                <td>${data.gradingFileURL ? 
+                  `<a href="${data.gradingFileURL}" target="_blank" class="btn btn-download">View</a>` : 
+                  '-'}</td>
+                <td class="actions-cell">${actionsHTML}</td>
+              `;
+              submissionTable.appendChild(row);
+            } catch (error) {
+              console.error("Error processing document:", error);
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td colspan="8" style="color: red;">
+                  Error loading submission: ${error.message}
+                </td>
+              `;
+              submissionTable.appendChild(row);
+            }
+          });
+
+          applyFilters();
+        },
+        (error) => {
+          console.error("Error fetching submissions:", error);
+          submissionTable.innerHTML = `
+            <tr>
+              <td colspan="8" style="color: red; text-align: center; padding: 20px;">
+                Error loading submissions. Please refresh the page.
+              </td>
+            </tr>
+          `;
+        }
+      );
+  }
+
+  // Modal functions
+  function openEditModal(id, grade, encodedFeedback) {
+    currentEditId = id;
+    const decodedFeedback = encodedFeedback ? decodeURIComponent(escape(atob(encodedFeedback))) : '';
+    document.getElementById('editGrade').value = grade;
+    document.getElementById('editFeedback').value = decodedFeedback;
+    document.getElementById('editModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditId = null;
+  }
+
+  function saveEdit() {
+    const grade = document.getElementById('editGrade').value.trim();
+    const feedback = document.getElementById('editFeedback').value.trim();
+
+    if (!grade || !grade.match(/^\d+\/\d+$/)) {
+      alert("Please enter a valid grade (e.g., 8/10)");
+      return;
+    }
+
+    if (!feedback) {
+      alert("Please provide feedback for the student");
+      return;
+    }
+
+    db.collection('submissions').doc(currentEditId).update({
+      grade: grade,
+      feedback: feedback,
+      status: "Graded",
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert("✅ Feedback updated successfully!");
+      closeModal();
+    }).catch((error) => {
+      console.error("Error updating submission:", error);
+      alert("❌ Failed to update. Please try again.");
+    });
+  }
+
+  function releaseStudent(id) {
+    if (!confirm("Are you sure you want to release this grade to the student?")) return;
+    
+    db.collection('submissions').doc(id).update({
+      released: true,
+      status: "Released",
+      releasedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert("✅ Grade released to student!");
+    }).catch((error) => {
+      console.error("Error releasing grade:", error);
+      alert("❌ Failed to release grade. Please try again.");
+    });
+  }
+
+  // Filter functions
+  function applyFilters() {
+    const searchVal = searchInput.value.toLowerCase();
+    const filterVal = statusFilter.value.toLowerCase();
+
+    const rows = submissionTable.querySelectorAll('tr');
+    rows.forEach(row => {
+      const cells = row.children;
+      if (cells.length < 8) return; // Skip error rows
+
+      const name = cells[0].innerText.toLowerCase();
+      const id = cells[1].innerText.toLowerCase();
+      const assignment = cells[2].innerText.toLowerCase();
+      const status = cells[4].innerText.toLowerCase();
+
+      const matchesSearch = name.includes(searchVal) || 
+                          id.includes(searchVal) || 
+                          assignment.includes(searchVal);
+      const matchesStatus = filterVal === "" || status.includes(filterVal);
+
+      row.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+    });
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchSubmissions();
+    
+    // Event listeners
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+  });
+</script>
+
+
+</body>
+</html>

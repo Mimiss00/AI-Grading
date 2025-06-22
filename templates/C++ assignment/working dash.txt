@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="TemplateMo">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+
+    <title>Education Meeting HTML5 Template</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+
+    <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/fontawesome.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/templatemo-edu-meeting.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!--
+
+
+-->
+  </head>
+
+<body>
+
+  <!-- Sub Header -->
+  
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+      <div class="container">
+          <div class="row">
+              <div class="col-12">
+                  <nav class="main-nav">
+                      <!-- ***** Logo Start ***** -->
+                      <a href="index.html" class="logo">
+                          MIGRADE
+                      </a>
+                      <!-- ***** Logo End ***** -->
+                      <!-- ***** Menu Start ***** -->
+                      <ul class="nav">
+                          <li class="scroll-to-section"><a href="#top" class="active">Home</a></li>
+                          <li><a href="meetings.html">Assignments</a></li>
+                          <li class="scroll-to-section"><a href="#apply">My Grades</a></li>
+                          <li class="has-sub">
+                              <span class="toggle" style="font-size: 28px;">
+                              <i class="fas fa-user-circle"></i>
+                              <ul class="sub-menu">
+                                <li><a href="profile.html">Profile</a></li>
+                                <li><a href="logout.html">Logout</a></li>
+                              </ul>
+                            </span>
+                          </li>
+                      </ul>        
+                      <a class='menu-trigger'>
+                          <span>Menu</span>
+                      </a>
+                      <!-- ***** Menu End ***** -->
+                  </nav>
+              </div>
+          </div>
+      </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <!-- ***** Main Banner Area Start ***** -->
+  <section class="section main-banner" id="top" data-section="section1">
+      <video autoplay muted loop id="bg-video">
+          <source src="{{ url_for('static', filename='assets/images/course-video.mp4') }}"  type="video/mp4" />
+      </video>
+
+      <div class="video-overlay header-text">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="caption">
+                  <h6 id="student-greeting">Hello</h6>
+              <h2>Welcome to MIGRADE</h2>
+              <p>Automated grading and personalized feedback system for C++ handwritten assignments. Powered by machine learning, OCR, and Firebase to enhance student evaluation and feedback efficiency.</p>
+              <div class="main-button-red">
+                  <div class="scroll-to-section"><a href="#contact">View Assignments</a></div>
+              </div>
+          </div>
+              </div>
+            </div>
+          </div>
+      </div>
+  </section>
+  <!-- ***** Main Banner Area End ***** -->
+
+  <section class="services">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="owl-service-item owl-carousel">
+          
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-01.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>AI-Powered Grading</h4>
+                <p>Automatically evaluates C++ handwritten code using OCR and machine learning for consistent, fast grading.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-02.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>Personalized Feedback</h4>
+                <p> Generates clear, structured feedback to help students understand their mistakes and improve.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-03.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>Real-Time Progress Tracking</h4>
+                <p>Students and lecturers can view submission status, feedback history, and performance trends in real-time.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-02.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4> Advanced OCR Technology</h4>
+                <p>Converts handwritten C++ code into machine-readable text using  Optical Character Recognition, enabling automated grading and feedback.</p>
+              </div>
+            </div>
+          
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="upcoming-meetings" id="upcoming">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="section-heading">
+          <h2>Upcoming Assignments</h2>
+        </div>
+      </div>
+      <div class="col-lg-12">
+        <div class="assignment-accordion" id="assignmentAccordion">
+          <!-- Assignment items will be inserted here by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+ 
+
+<section class="our-facts text-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <h2 class="mb-5">Assignment Summary</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="totalCount">--</div>
+              <div class="count-title">Total Assignments</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="notSubmittedCount">--</div>
+              <div class="count-title">Not Submitted</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="submittedCount">--</div>
+              <div class="count-title">Submitted</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="averageGrade">--%</div>
+              <div class="count-title">Average Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Insert this before </body> -->
+<div id="uploadModal" class="modal" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
+  <div class="upload-box" style="background:white; padding:40px; border-radius:12px; max-width:500px; width:90%; position:relative;">
+    <span onclick="closeUploadModal()" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer;">&times;</span>
+    <h2>UPLOAD FILES</h2>
+    <p>Upload your assignment. PDF & Image are allowed.</p>
+    <div class="drop-area" id="drop-area" style="border:2px dashed #ccc; padding:30px; border-radius:10px; text-align:center;">
+      <img src="/static/icon/upload.png" alt="Upload Icon" style="width:60px; margin-bottom:10px;" />
+      <span>Drag & Drop your files here</span>
+      <br/><br/><span>OR</span>
+      <br/><br/>
+      <button id="browseBtn">Browse Files</button>
+      <input type="file" id="fileInput" class="file-selector-input" accept=".pdf,image/*" style="display:none" />
+    </div>
+    <div id="fileList" class="file-list" style="margin-top:15px;"></div>
+  </div>
+</div>
+
+
+
+
+  <!-- Scripts -->
+  <!-- Bootstrap core JavaScript -->
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/owl-carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/lightbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/tabs.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/video.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/slick-slider.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+
+    <script>
+        //according to loftblog tut
+        $('.nav li:first').addClass('active');
+
+        var showSection = function showSection(section, isAnimate) {
+          var
+          direction = section.replace(/#/, ''),
+          reqSection = $('.section').filter('[data-section="' + direction + '"]'),
+          reqSectionPos = reqSection.offset().top - 0;
+
+          if (isAnimate) {
+            $('body, html').animate({
+              scrollTop: reqSectionPos },
+            800);
+          } else {
+            $('body, html').scrollTop(reqSectionPos);
+          }
+
+        };
+
+        var checkSection = function checkSection() {
+          $('.section').each(function () {
+            var
+            $this = $(this),
+            topEdge = $this.offset().top - 80,
+            bottomEdge = topEdge + $this.height(),
+            wScroll = $(window).scrollTop();
+            if (topEdge < wScroll && bottomEdge > wScroll) {
+              var
+              currentId = $this.data('section'),
+              reqLink = $('a').filter('[href*=\\#' + currentId + ']');
+              reqLink.closest('li').addClass('active').
+              siblings().removeClass('active');
+            }
+          });
+        };
+
+        $('.main-menu, .responsive-menu, .scroll-to-section').on('click', 'a', function (e) {
+          e.preventDefault();
+          showSection($(this).attr('href'), true);
+        });
+
+        $(window).scroll(function () {
+          checkSection();
+        });
+    </script>
+  
+<!-- Update your Firebase JavaScript code -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+    authDomain: "fyp-ai-3a972.firebaseapp.com",
+    projectId: "fyp-ai-3a972",
+    storageBucket: "fyp-ai-3a972.appspot.com",
+    messagingSenderId: "1095317736019",
+    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const accordionDiv = document.getElementById("assignmentAccordion");
+  const today = new Date();
+    let currentAssignmentId = null;
+
+
+  // --------- Load Assignments ---------
+  async function loadAssignments() {
+    const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
+    let hasAssignments = false;
+
+    assignmentsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      const dueDate = new Date(data.dueDate);
+
+      if (dueDate >= today) {
+        hasAssignments = true;
+        const title = data.title || "Untitled";
+        const description = data.description || "No description available.";
+        const fileURL = data.assignmentFileURL || "#";
+        const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const formattedDate = dueDate.toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric"
+        });
+
+        const assignmentItem = document.createElement('div');
+        assignmentItem.classList.add('assignment-item');
+
+        assignmentItem.innerHTML = `
+          <div class="assignment-header">
+            <div class="assignment-info">
+              <h4>${title}</h4>
+              <div class="due-date">
+                <span>Due: ${formattedDate}</span>
+                <span class="days-left">${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left</span>
+              </div>
+            </div>
+            <button class="toggle-btn">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="assignment-details">
+            <p>Desc: ${description}</p>
+            <a href="${fileURL}" target="_blank" class="view-assignment-btn">View Assignment</a>
+            <button class="action-btn upload-btn" onclick="openUploadModal('${doc.id}')">
+              <i class="fas fa-upload"></i> Upload Submission
+            </button>
+          </div>
+        `;
+
+        accordionDiv.appendChild(assignmentItem);
+      }
+    });
+
+    if (!hasAssignments) {
+      accordionDiv.innerHTML = "<p style='text-align: center; color: #666;'>No upcoming assignments found.</p>";
+    }
+
+    // Toggle accordion logic
+    const assignmentItems = document.querySelectorAll('.assignment-item');
+    assignmentItems.forEach(item => {
+      const header = item.querySelector('.assignment-header');
+      header.addEventListener('click', function () {
+        assignmentItems.forEach(otherItem => {
+          if (otherItem !== item && otherItem.classList.contains('active')) {
+            otherItem.classList.remove('active');
+          }
+        });
+        item.classList.toggle('active');
+      });
+    });
+  }
+
+
+  // --------- Upload Functions ---------
+  function openUploadModal(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#uploadModal').modal('show');
+  }
+
+  async function uploadSubmission() {
+    const file = document.getElementById('submissionFile').files[0];
+    const studentID = localStorage.getItem("studentID");
+    
+    if (!file || !studentID || !currentAssignmentId) {
+      alert("Please select a file and make sure you're logged in");
+      return;
+    }
+
+    const confirmBtn = document.getElementById('confirmUpload');
+    confirmBtn.disabled = true;
+    
+    try {
+      // Create storage path: submissions/{studentID}/{assignmentID}/filename
+      const storagePath = `submissions/${studentID}/${currentAssignmentId}/${file.name}`;
+      const storageRef = ref(storage, storagePath);
+      
+      // Upload file
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Update progress bar
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          document.getElementById('uploadProgress').style.width = progress + '%';
+        },
+        (error) => {
+          console.error("Upload failed:", error);
+          alert("Upload failed: " + error.message);
+          confirmBtn.disabled = false;
+        },
+        async () => {
+          // Upload complete
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          // Save submission record to Firestore
+          await setDoc(doc(db, "submissions", `${studentID}_${currentAssignmentId}`), {
+            studentID: studentID,
+            assignmentID: currentAssignmentId,
+            fileURL: downloadURL,
+            submittedAt: new Date().toISOString(),
+            status: "submitted",
+            grade: ""
+          });
+          
+          alert("Submission uploaded successfully!");
+          $('#uploadModal').modal('hide');
+          updateStats(); // Refresh the stats
+        }
+      );
+    } catch (error) {
+      console.error("Error uploading:", error);
+      alert("Error: " + error.message);
+      confirmBtn.disabled = false;
+    }
+  }
+
+
+
+
+  // --------- Load Stats for Logged-in Student ---------
+async function updateStats() {
+  const studentID = localStorage.getItem("studentID");
+  if (!studentID) return;
+
+  const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
+  const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+
+  let totalCount = 0;
+  let submittedCount = 0;
+  let notSubmittedCount = 0;
+  let gradeTotal = 0;
+  let gradeCount = 0;
+
+  const submissionsMap = {};
+  submissionsSnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.studentID === studentID) {
+      submissionsMap[data.assignmentID] = data;
+    }
+  });
+
+  assignmentsSnapshot.forEach((doc) => {
+    const assignmentID = doc.id;
+    totalCount++;
+
+    const submission = submissionsMap[assignmentID];
+    if (submission) {
+      const status = (submission.status || "not submitted").toLowerCase();
+      const grade = submission.grade || "";
+
+      if (status === "submitted") {
+        submittedCount++;
+
+        // Parse grade like "3/5"
+        if (grade.includes("/")) {
+          const [scored, max] = grade.split("/").map(Number);
+          if (!isNaN(scored) && !isNaN(max) && max > 0) {
+            const percentage = (scored / max) * 100;
+            gradeTotal += percentage;
+            gradeCount++;
+          }
+        }
+      } else {
+        notSubmittedCount++;
+      }
+    } else {
+      notSubmittedCount++;
+    }
+  });
+
+  const average = gradeCount > 0 ? (gradeTotal / gradeCount).toFixed(2) : "-";
+
+  // Update DOM
+  document.getElementById("totalCount").innerText = totalCount || "0";
+  document.getElementById("submittedCount").innerText = submittedCount || "0";
+  document.getElementById("notSubmittedCount").innerText = notSubmittedCount || "0";
+  document.getElementById("averageGrade").innerText = average === "-" ? "--%" : average + "%";
+   document.getElementById('confirmUpload').addEventListener('click', uploadSubmission);
+}
+
+
+  // --------- Trigger on Page Load ---------
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAssignments();
+    updateStats();
+  });
+</script>
+
+ <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const studentData = JSON.parse(localStorage.getItem("studentData"));
+    if (studentData && studentData.firstname) {
+      const greetingEl = document.getElementById("student-greeting");
+      greetingEl.innerText = `Hello, ${studentData.firstname}`;
+    }
+  });
+</script>
+
+
+
+
+</body>
+</html>

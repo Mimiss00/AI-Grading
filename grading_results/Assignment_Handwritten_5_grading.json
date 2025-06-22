@@ -1,0 +1,3 @@
+{
+    "grading": "Grade: 60/100\n\nFeedback:\n- You have made several syntax errors in your code, such as using `int. Vacation;` instead of `int Vacation;`, missing semicolons, and incorrect variable casing.\n- You have not handled the case for years between 6 and 10 as specified in the answer scheme.\n- Your output formatting is incorrect with extra characters and missing endlines."
+}

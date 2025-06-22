@@ -1,0 +1,244 @@
+<!-- Updated Upload Assignment Page - Professional Style -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Upload Assignment - Lecturer Panel</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f5f7fa;
+      color: #1e1e2f;
+      overflow-x: hidden;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+      color: white;
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+
+    .sidebar a {
+      color: #cfd8dc;
+      text-decoration: none;
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      transition: color 0.2s;
+    }
+
+    .sidebar a i {
+      margin-right: 12px;
+    }
+
+    .sidebar a:hover {
+      color: #ffffff;
+    }
+
+    .sidebar a.active {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+
+    .main {
+      flex: 1;
+      padding: 40px 60px;
+    }
+
+    .main h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 25px;
+    }
+
+    .upload-box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      max-width: 700px;
+    }
+
+    form label {
+      font-weight: 600;
+      display: block;
+      margin: 18px 0 6px;
+    }
+
+    form input[type="text"],
+    form input[type="date"],
+    form input[type="file"],
+    form textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    form textarea {
+      resize: vertical;
+    }
+
+    form button {
+      margin-top: 24px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <h1>MIGRADE</h1>
+      <a href="/lecturer/dashboard-edu"><i class="fas fa-house"></i> Dashboard</a>
+      <a href="/lecturer/my-classes"><i class="fas fa-file-signature"></i> Submission</a>
+      <a href="/lecturer/all-assignment"><i class="fas fa-book"></i> All Assignments</a>
+      <a href="/lecturer/upload-material"><i class="fas fa-upload"></i> Upload Material</a>
+      <a href="/templates/roleSelect.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main">
+      <h2>Upload Assignment & Answer Scheme</h2>
+      <div class="upload-box">
+        <form id="uploadAssignmentForm" enctype="multipart/form-data">
+          <label for="title">Assignment Title</label>
+          <input type="text" id="title" name="title" placeholder="e.g., Week 3: Loops and Functions" required>
+
+          <label for="due_date">Due Date</label>
+          <input type="date" id="due_date" name="due_date">
+
+          <label for="assignment_file">Upload Assignment File</label>
+          <input type="file" id="assignment_file" name="assignment_file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" required>
+
+          <label for="answer_scheme">Upload Answer Scheme (JSON only)</label>
+          <input type="file" id="answer_scheme" name="answer_scheme" accept=".json" required>
+
+          <label for="description">Description / Notes</label>
+          <textarea id="description" name="description" rows="4" placeholder="Any additional instructions..."></textarea>
+
+          <button type="submit">Upload Assignment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+      authDomain: "fyp-ai-3a972.firebaseapp.com",
+      projectId: "fyp-ai-3a972",
+      storageBucket: "fyp-ai-3a972.firebasestorage.app",
+      messagingSenderId: "1095317736019",
+      appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const auth =getAuth(app);
+
+    const assignmentForm = document.getElementById("uploadAssignmentForm");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    assignmentForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("title").value.trim();
+      const dueDate = document.getElementById("due_date").value;
+      const description = document.getElementById("description").value.trim();
+      const assignmentFile = document.getElementById("assignment_file").files[0];
+      const answerScheme = document.getElementById("answer_scheme").files[0];
+
+      try {
+        const q = query(collection(db, "assignments"), where("title", "==", title), where("dueDate", "==", dueDate));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          alert("⚠️ Assignment with same title and due date already exists!");
+          return;
+        }
+
+        const assignmentRef = ref(storage, `assignments/${assignmentFile.name}`);
+        const answerRef = ref(storage, `answer_schemes/${answerScheme.name}`);
+
+        await uploadBytes(assignmentRef, assignmentFile);
+        await uploadBytes(answerRef, answerScheme);
+
+        const assignmentFileURL = await getDownloadURL(assignmentRef);
+        const answerSchemeFileURL = await getDownloadURL(answerRef);
+
+        await addDoc(collection(db, "assignments"), {
+          title,
+          dueDate,
+          description,
+          assignmentFileURL,
+          answerSchemeFileURL,
+          uploadedAt: new Date().toISOString(),
+          lecturerUID: user.uid  // optional: track who uploaded
+        });
+
+        alert("✅ Assignment uploaded successfully!");
+        assignmentForm.reset();
+      } catch (error) {
+        console.error("❌ Upload failed:", error);
+        alert("❌ Upload failed, see console for details.");
+      }
+    });
+  } else {
+    alert("❌ You must be logged in to upload files.");
+  }
+});
+
+    
+
+
+    // Highlight active sidebar link
+  const links = document.querySelectorAll('.sidebar a');
+  const currentPath = window.location.pathname;
+
+  links.forEach(link => {
+    if (link.getAttribute('href') === currentPath) {
+      link.classList.add('active');
+    }
+  });
+  
+  </script>
+</body>
+</html>
