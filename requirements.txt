@@ -6,3 +6,4 @@ requests
 gunicorn
 PyMuPDF
 pdfplumber
+openai
