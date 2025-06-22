@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Template Mo">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+
+    <title>Lecturer Page</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+
+
+    <!-- Additional CSS Files -->
+   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/fontawesome.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/template-edu.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+
+
+  </head>
+
+<body>
+
+   
+
+
+  </div>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+      <div class="container">
+          <div class="row">
+              <div class="col-12">
+                  <nav class="main-nav">
+                      <!-- ***** Logo Start ***** -->
+                      <a href="{{ url_for('lecturer.dashboard_lecturer') }}" class="logo">
+                          MIGRADE
+                      </a>
+                      <!-- ***** Logo End ***** -->
+                      <!-- ***** Menu Start ***** -->
+                     <ul class="nav">
+                            <li class="scroll-to-section">
+                              <a href="{{ url_for('lecturer.dashboard_lecturer') }}">Home</a>
+
+                            </li>
+                            <li class="has-sub">
+                                <a href="javascript:void(0)">Pages <i class="fa fa-angle-down"></i></a>
+                                <ul class="sub-menu">
+                                <li><a href="{{ url_for('lecturer.my_classes') }}" class="active">Submissions</a></li>
+                                <li><a href="{{ url_for('lecturer.all_assignment') }}">All Assignments</a></li>
+                                </ul>
+                            </li>
+
+                          <li class="has-sub">
+                              <span class="toggle" style="font-size: 28px;">
+                              <i class="fas fa-user-circle"></i>
+                              <ul class="sub-menu">
+                                <li><a href="profile.html">Profile</a></li>
+                                <li><a href="logout.html">Logout</a></li>
+                              </ul>
+                            </span>
+                          </li>
+                      </ul>    
+
+                      <a class='menu-trigger'>
+                          <span>Menu</span>
+                      </a>
+                      <!-- ***** Menu End ***** -->
+                  </nav>
+              </div>
+          </div>
+      </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <section class="heading-page header-text" id="top">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h6>Track Your Students' Assignment Submissions</h6>
+          <h2>Assignment Overview</h2>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+
+
+<section class="lecturer-submissions" id="lecturerSubmissions">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <!-- Filter Navigation -->
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="filters text-center mb-4">
+              <ul class="list-inline">
+                <li class="list-inline-item active" data-filter="*">All Submissions</li>
+                <li class="list-inline-item" data-filter=".graded">Graded</li>
+                <li class="list-inline-item" data-filter=".released">Released</li>
+              </ul>
+            </div>
+
+            <!-- Cards Grid Container -->
+            <div class="row grid" id="lecturerSubmissionGrid">
+              <!-- JS will dynamically insert submission cards here -->
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+  
+
+
+
+
+
+  <!-- Scripts -->
+  <!-- Bootstrap core JavaScript -->
+      <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+
+      <!-- JS -->
+      <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/owl-carousel.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/lightbox.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/tabs.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/video.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/slick-slider.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+
+
+
+
+
+
+<script>
+  document.querySelectorAll('.filters li').forEach(btn => {
+    btn.addEventListener('click', function () {
+      // Remove active class from all buttons
+      document.querySelectorAll('.filters li').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      const filterValue = this.getAttribute('data-filter');
+
+      document.querySelectorAll('.mix').forEach(card => {
+        if (filterValue === '*' || card.classList.contains(filterValue.replace('.', ''))) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+<script type="module" src="{{ url_for('static', filename='js/indexLecturer.js') }}"></script>
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
