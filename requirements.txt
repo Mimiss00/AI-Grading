@@ -4,6 +4,5 @@ numpy
 firebase-admin
 requests
 gunicorn
-flask-bycrypt
 PyMuPDF
 pdfplumber
