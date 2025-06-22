@@ -3,7 +3,10 @@ opencv-python-headless
 numpy
 firebase-admin
 requests
-gunicorn
-PyMuPDF
-pdfplumber
+PyPDF2
+fpdf
+pdf2image
+google-cloud-vision
+pytz
 openai
+gunicorn
