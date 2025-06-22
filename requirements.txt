@@ -1,0 +1,12 @@
+firebase-admin
+google-cloud-vision
+google-cloud-storage
+PyPDF2
+fpdf
+opencv-python
+numpy
+pdf2image
+openai
+requests
+pytz
+flask
