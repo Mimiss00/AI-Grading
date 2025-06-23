@@ -2,8 +2,15 @@ from flask import Flask, Blueprint, render_template, request, redirect, session,
 from flask_bcrypt import Bcrypt
 import os
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'frontend', 'templates') 
+STATIC_DIR = os.path.join(BASE_DIR, 'frontend', 'static')
+
+print("Resolved template path:", TEMPLATE_DIR)
+print("Templates:", os.listdir(TEMPLATE_DIR))
+
 # --- Lecturer Blueprint ---
-lecturer_bp = Blueprint('lecturer', __name__, template_folder='templates')
+lecturer_bp = Blueprint('lecturer', __name__, template_folder=TEMPLATE_DIR)
 
 @lecturer_bp.route('/login')
 def login_lecturer():
@@ -30,7 +37,7 @@ def all_assignment():
     return render_template('edu-meeting/AssignmentsEdu.html')
 
 # --- Student Blueprint ---
-student_bp = Blueprint('student', __name__, template_folder='templates')
+student_bp = Blueprint('student', __name__, template_folder=TEMPLATE_DIR)
 
 @student_bp.route('/login', methods=['GET'])
 def login_student():
@@ -53,7 +60,7 @@ def student_grade():
     return render_template('gradesStud.html')
 
 # --- Flask App Setup ---
-app = Flask(__name__)
+app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.secret_key = 'your_secret_key'
 bcrypt = Bcrypt(app)
 
