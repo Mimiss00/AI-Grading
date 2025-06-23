@@ -14,3 +14,8 @@ __pycache__/
 
 # Optional: VSCode
 .vscode/
+
+# Allow everything under frontend/templates/
+!frontend/templates/
+!frontend/templates/**/*.html
+!frontend/templates/**/
