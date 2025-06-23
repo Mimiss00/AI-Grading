@@ -2,6 +2,7 @@
 *.json
 *.txt
 !requirements.txt
+!railway.json
 grading.py
 
 # Node modules (if using npm)
@@ -9,8 +10,8 @@ node_modules/
 
 key.b64.txt
 
-# VSCode settings (optional)
+# VSCode settings
 .vscode/
 
-!.gitignore
+# Ignore everything else by default
 *
