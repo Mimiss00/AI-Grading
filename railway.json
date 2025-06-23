@@ -1,0 +1,17 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "services": [
+    {
+      "name": "flask-web",
+      "start": "python app.py",
+      "env": "python"
+    },
+    {
+      "name": "grader-worker",
+      "start": "python auto_grading_server.py",
+      "env": "python"
+    }
+  ]
+}
