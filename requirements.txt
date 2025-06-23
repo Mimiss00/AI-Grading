@@ -11,4 +11,5 @@ pytz
 openai
 gunicorn
 reportlab
+flask-bcrypt
 
