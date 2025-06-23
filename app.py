@@ -22,11 +22,11 @@ def signup_lecturer():
 
 @lecturer_bp.route('/dashboard-edu')
 def dashboard_lecturer():
-    return render_template('edu-meeting/indexEdu.html')
+    return render_template('indexEdu.html')
 
 @lecturer_bp.route('/my-classes')
 def my_classes():
-    return render_template('edu-meeting/submissionEdu.html')
+    return render_template('submissionEdu.html')
 
 @lecturer_bp.route('/upload-material')
 def upload_material():
@@ -34,7 +34,7 @@ def upload_material():
 
 @lecturer_bp.route('/all-assignment')
 def all_assignment():
-    return render_template('edu-meeting/AssignmentsEdu.html')
+    return render_template('AssignmentsEdu.html')
 
 # --- Student Blueprint ---
 student_bp = Blueprint('student', __name__, template_folder=TEMPLATE_DIR)
@@ -45,11 +45,11 @@ def login_student():
 
 @student_bp.route('/dashboard', methods=['GET'])
 def student_dashboard():
-    return render_template("edu-meeting/indexStud.html")
+    return render_template("indexStud.html")
 
 @student_bp.route('/my-assignment', methods=['GET'])
 def student_assignment():
-    return render_template('edu-meeting/meetings.html')
+    return render_template('meetings.html')
 
 @student_bp.route('/uploadAssignment', methods=['GET'])
 def student_upload():
