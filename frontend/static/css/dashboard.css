@@ -1,0 +1,90 @@
+/* /static/css/studentDashboard.css */
+body {
+    margin: 0;
+    font-family: 'Ubuntu', sans-serif;
+    background-color: #f4f6f8;
+  }
+  
+  .sidebar {
+    position: fixed;
+    width: 220px;
+    height: 100%;
+    background: #f05462;
+    padding-top: 20px;
+    color: white;
+  }
+  
+  .sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .sidebar ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .sidebar ul li {
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+  }
+  
+  .sidebar ul li a:hover {
+    background: white;
+    color: #f05462;
+    padding: 10px 20px;
+    border-radius: 8px;
+  }
+  
+  .content {
+    margin-left: 220px;
+    padding: 40px;
+  }
+  
+  h1 {
+    color: #3c4b64;
+  }
+  
+  .cards {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+  }
+  
+  .card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    flex: 1;
+    text-align: center;
+  }
+  
+  .card h3 {
+    margin-bottom: 10px;
+  }
+  
+  .card p {
+    color: #777;
+    margin-bottom: 20px;
+  }
+  
+  .btn {
+    display: inline-block;
+    background: #7494EC;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+  
+  .btn:hover {
+    background: #5a7be0;
+  }
+  

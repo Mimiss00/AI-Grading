@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Role</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/roleSelect.css') }}">
+
+    <!-- Optional: Google Fonts corrected -->
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;500;700&family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header-container">
+        <div class="role-header">
+            <h1>Select Your Role</h1>
+            <p>Please choose whether you're a student or a lecturer to continue.</p>
+        </div>
+    </div>
+    <div class="container">
+        <div class="radio-tile-group">
+            <div class="input-container">
+                <input id="lecturer" type="radio" name="radio" onclick="redirectToLogin('lecturer')">
+                <div class="radio-tile">
+<img src="{{ url_for('static', filename='icon/lecturer.png') }}" alt="Lecturer Icon" class="role-icon">
+                    <label for="lecturer">Lecturer</label>
+                </div> 
+            </div>
+
+            <div class="input-container">
+                <input id="student" type="radio" name="radio" onclick="redirectToLogin('student')">
+                <div class="radio-tile">
+<img src="{{ url_for('static', filename='icon/student.png') }}" alt="Student Icon" class="role-icon">
+                    <label for="student">Student</label>
+                </div> 
+            </div>
+        </div>
+    </div>
+
+    <!-- Icons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <script>
+        function redirectToLogin(role) {
+            if (role === 'lecturer') {
+                window.location.href = '/lecturer/login';
+            } else if (role === 'student') {
+                window.location.href = '/student/login';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!-- templates/role_select.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Role</title>
+    <link rel="stylesheet" href = "/static/css/roleSelect.css">
+    <link href="https://fonts.google.com/share?selection.family=Raleway:ital,wght@0,100..900;1,100..900|Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700">
+
+</head>
+<body>
+    <div class="header-container">
+        <div class="role-header">
+            <h1>Select Your Role</h1>
+            <p>Please choose whether you're a student or a lecturer to continue.</p>
+        </div>
+    </div>
+    <div class="container">
+        <div class="radio-tile-group">
+            <div class="input-container">
+               <input id="lecturer" type="radio" name="radio" onclick="redirectToLogin('lecturer')">
+               <div class="radio-tile">
+                <img src="/static/icon/lecturer.png" alt="Lecturer Icon" class="role-icon">
+                <label for="lecturer">Lecturer</label>
+               </div> 
+            </div>
+
+            <div class="input-container">
+                <input id="student" type="radio" name="radio" onclick="redirectToLogin('student')">
+                <div class="radio-tile">
+                    <img src="/static/icon/student.png" alt="Lecturer Icon" class="role-icon">
+                 <label for="student">Student</label>
+                </div> 
+             </div>
+        </div>
+
+        
+    </div>
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <script>
+        function redirectToLogin(role) {
+            if (role === 'lecturer') {
+                window.location.href = '/lecturer/login';
+            } else if (role === 'student') {
+                window.location.href = '/student/login';
+          }
+        }
+      </script>
+
+</body>
+</html>

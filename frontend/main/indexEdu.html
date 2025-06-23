@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="TemplateMo">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+
+    <title>Lecturer Page</title>
+
+    
+
+
+    <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/fontawesome.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/templatemo-edu-meeting.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+
+
+  </head>
+
+<body>
+
+  
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+      <div class="container">
+          <div class="row">
+              <div class="col-12">
+                  <nav class="main-nav">
+                      <!-- ***** Logo Start ***** -->
+                      <a href="{{ url_for('lecturer.dashboard_lecturer') }}" class="logo">
+                          MIGRADE
+                      </a>
+                      <!-- ***** Logo End ***** -->
+                      <!-- ***** Menu Start ***** -->
+                      <ul class="nav">
+                          <li class="scroll-to-section"><a href="{{ url_for('lecturer.dashboard_lecturer') }}"class="active">Home</a></li>
+
+                           </li>
+                            <li class="has-sub">
+                                <a href="javascript:void(0)">Pages <i class="fa fa-angle-down"></i></a>
+                                <ul class="sub-menu">
+                                <li><a href="{{ url_for('lecturer.my_classes') }}">Submissions</a></li>
+                                <li><a href="{{ url_for('lecturer.all_assignment') }}">All Assignments</a></li>
+                                </ul>
+                            </li>
+                          <li class="has-sub">
+                              <span class="toggle" style="font-size: 28px;">
+                              <i class="fas fa-user-circle"></i>
+                              <ul class="sub-menu">
+                                <li><a href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Profile</a></li>
+                                <li><a href="{{ url_for('lecturer.login_lecturer') }}">Logout</a></li>
+                              </ul>
+                            </span>
+                          </li>
+                      </ul>        
+                      <a class='menu-trigger'>
+                          <span>Menu</span>
+                      </a>
+                      <!-- ***** Menu End ***** -->
+                  </nav>
+              </div>
+          </div>
+      </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <!-- ***** Main Banner Area Start ***** -->
+  <section class="section main-banner" id="top" data-section="section1">
+      <video autoplay muted loop id="bg-video">
+          <source src="{{ url_for('static', filename='assets/images/course-video.mp4') }}"  type="video/mp4" />
+      </video>
+
+      <div class="video-overlay header-text">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="caption">
+                  <h6 id="student-greeting">Hello</h6>
+              <h2>Welcome to MIGRADE</h2>
+              <p>Automated grading and personalized feedback system for C++ handwritten assignments. Powered by machine learning, OCR, and Firebase to enhance student evaluation and feedback efficiency.</p>
+              <div class="main-button-red">
+                  <div class="scroll-to-section"><a href="#contact">View Assignments</a></div>
+              </div>
+          </div>
+              </div>
+            </div>
+          </div>
+      </div>
+  </section>
+  <!-- ***** Main Banner Area End ***** -->
+
+  <section class="services">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="owl-service-item owl-carousel">
+          
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-01.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>AI-Powered Grading</h4>
+                <p>Automatically evaluates C++ handwritten code using OCR and machine learning for consistent, fast grading.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-02.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>Personalized Feedback</h4>
+                <p> Generates clear, structured feedback to help students understand their mistakes and improve.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-03.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4>Real-Time Progress Tracking</h4>
+                <p>Students and lecturers can view submission status, feedback history, and performance trends in real-time.</p>
+              </div>
+            </div>
+            
+            <div class="item">
+              <div class="icon">
+                <img src="{{ url_for('static', filename='assets/images/service-icon-02.png') }}" alt="">
+              </div>
+              <div class="down-content">
+                <h4> Advanced OCR Technology</h4>
+                <p>Converts handwritten C++ code into machine-readable text using  Optical Character Recognition, enabling automated grading and feedback.</p>
+              </div>
+            </div>
+          
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+ 
+<section class="upcoming-meetings" id="upcoming">
+  <div class="container">
+    <div class="row">
+     <div class="section-heading">
+          <h2>Recent Submissions</h2>
+        </div>
+        <div id="recent-submissions" class="row g-4"></div>
+        <!-- Cards will be injected here by JavaScript -->
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+ 
+
+<section class="our-facts text-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <h2 class="mb-5">Assignment Summary</h2>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="totalCount">--</div>
+              <div class="count-title">Total Assignments</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="notSubmittedCount">--</div>
+              <div class="count-title">Not Submitted</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="submittedCount">--</div>
+              <div class="count-title">Submitted</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="count-area-content">
+              <div class="count-digit" id="averageGrade">--%</div>
+              <div class="count-title">Average Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+<!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="profileModalLabel">Lecturer Profile</h5>
+        <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <i class="fas fa-user-circle fa-4x text-secondary"></i>
+        </div>
+        <h5 id="lecturerName" class="mb-1 fw-bold">Loading...</h5>
+        <p id="lecturerEmail" class="text-muted">Loading...</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+  <!-- Scripts -->
+  <!-- Bootstrap core JavaScript -->
+       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/owl-carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/lightbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/tabs.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/video.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/slick-slider.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+
+
+<script>
+  // ✅ Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+    authDomain: "fyp-ai-3a972.firebaseapp.com",
+    projectId: "fyp-ai-3a972",
+    storageBucket: "fyp-ai-3a972.firebasestorage.app",
+    messagingSenderId: "1095317736019",
+    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6",
+    measurementId: "G-2Y9J22HNYN"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // ✅ Fetch and display lecturer profile
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      try {
+        const q = db.collection('lecturers').where('email', '==', user.email);
+        const snapshot = await q.get();
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data();
+          document.getElementById('lecturerName').textContent = data.name || "No Name";
+          document.getElementById('lecturerEmail').textContent = data.email || user.email;
+        } else {
+          document.getElementById('lecturerName').textContent = "Unknown";
+          document.getElementById('lecturerEmail').textContent = user.email;
+        }
+      } catch (error) {
+        console.error("Error fetching lecturer profile:", error);
+        document.getElementById('lecturerName').textContent = "Unknown";
+        document.getElementById('lecturerEmail').textContent = user.email;
+      }
+    }
+  });
+</script>
+
+  
+
+<script type="module" src="{{ url_for('static', filename='js/indexLecturer.js') }}"></script>
+
+
+
+
+</body>
+</html>

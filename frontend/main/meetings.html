@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Template Mo">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+
+    <title>Stusent Page</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+
+
+    <!-- Additional CSS Files -->
+   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/fontawesome.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/templatemo-edu-meeting.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+
+
+  </head>
+
+<body>
+
+   
+
+
+  </div>
+
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky">
+      <div class="container">
+          <div class="row">
+              <div class="col-12">
+                  <nav class="main-nav">
+                      <!-- ***** Logo Start ***** -->
+                      <a href="{{ url_for('student.student_dashboard') }}" class="logo">
+                          MIGRADE
+                      </a>
+                      <!-- ***** Logo End ***** -->
+                      <!-- ***** Menu Start ***** -->
+                      <ul class="nav">
+                          <li><a href="{{ url_for('student.student_dashboard') }}">Home</a></li>
+                          <li><a href="{{ url_for('student.student_assignment') }}" class ="active" >Assignments</a></li> 
+                          <li class="has-sub">
+                              <span class="toggle" style="font-size: 28px;">
+                              <i class="fas fa-user-circle"></i>
+                              <ul class="sub-menu">
+                                <li><a href="profile.html">Profile</a></li>
+                                <li><a href="logout.html">Logout</a></li>
+                              </ul>
+                            </span>
+                          </li>
+                          
+                      </ul>        
+                      <a class='menu-trigger'>
+                          <span>Menu</span>
+                      </a>
+                      <!-- ***** Menu End ***** -->
+                  </nav>
+              </div>
+          </div>
+      </div>
+  </header>
+  <!-- ***** Header Area End ***** -->
+
+  <section class="heading-page header-text" id="top">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h6>Track Your Assignment Submissions</h6>
+          <h2>Assignment Overview</h2>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<section class="meetings-page" id="meetings">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="filters">
+                <ul>
+                  <li data-filter="*"  class="active">All Assignments</li>
+                  <li data-filter=".soon">Submitted</li>
+                  <li data-filter=".att">Graded</li>
+                </ul>
+              </div>
+                   <div class="row grid" id="assignmentGrid">
+          <!-- Cards will be dynamically inserted -->
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+   <div id="feedbackModal" class="modal" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+  <div style="background:#fff; margin:5% auto; padding:25px; border-radius:10px; width:80%; max-width:700px; position:relative; max-height:80vh; overflow:hidden;">
+    <span id="closeModal" style="position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+    <h5 style="color:#0f172a; margin-bottom:16px;">Detailed Feedback</h5>
+    <div id="scoreSummary" class="score-summary"></div>
+    <div id="modalContent" style="color:#334155; font-size:14px;"></div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+  <div class="upload-box">
+    <span onclick="closeUploadModal()" class="cancel-btn" style="top: 10px; right: 15px;">&times;</span>
+    <h2>UPLOAD FILES</h2>
+    <p>Upload your assignment. PDF & Image are allowed.</p>
+
+    <div class="drop-area" id="drop-area">
+      <img src="/static/icon/upload.png" alt="Upload Icon" />
+      <span>Drag & Drop your files here</span>
+      <br/><br/><span>OR</span>
+      <br/><br/>
+      <button id="browseBtn">Browse Files</button>
+      <input type="file" id="fileInput" class="file-selector-input" accept=".pdf,image/*" />
+    </div>
+
+    <div id="fileList" class="file-list"></div>
+  </div>
+</div>
+
+
+
+  <!-- Scripts -->
+  <!-- Bootstrap core JavaScript -->
+      <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+
+      <!-- JS -->
+      <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/owl-carousel.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/lightbox.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/tabs.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/video.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/slick-slider.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+      <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
+
+
+
+    <script>
+        //according to loftblog tut
+        $('.nav li:first').addClass('active');
+
+        var showSection = function showSection(section, isAnimate) {
+          var
+          direction = section.replace(/#/, ''),
+          reqSection = $('.section').filter('[data-section="' + direction + '"]'),
+          reqSectionPos = reqSection.offset().top - 0;
+
+          if (isAnimate) {
+            $('body, html').animate({
+              scrollTop: reqSectionPos },
+            800);
+          } else {
+            $('body, html').scrollTop(reqSectionPos);
+          }
+
+        };
+
+        var checkSection = function checkSection() {
+          $('.section').each(function () {
+            var
+            $this = $(this),
+            topEdge = $this.offset().top - 80,
+            bottomEdge = topEdge + $this.height(),
+            wScroll = $(window).scrollTop();
+            if (topEdge < wScroll && bottomEdge > wScroll) {
+              var
+              currentId = $this.data('section'),
+              reqLink = $('a').filter('[href*=\\#' + currentId + ']');
+              reqLink.closest('li').addClass('active').
+              siblings().removeClass('active');
+            }
+          });
+        };
+
+        $('.main-menu, .responsive-menu, .scroll-to-section').on('click', 'a', function (e) {
+          e.preventDefault();
+          showSection($(this).attr('href'), true);
+        });
+
+        $(window).scroll(function () {
+          checkSection();
+        });
+    </script>
+
+
+<script>
+  function openFeedbackModalFromButton(button) {
+    const encoded = button.dataset.feedback;
+    const feedback = decodeURIComponent(encoded);
+    openFeedbackModal(feedback);
+
+    
+  }
+</script>
+
+
+ <script>
+  function openFeedbackModal(feedback, score = "", gradingFileURL = "") {
+    const modalContent = document.getElementById("modalContent");
+    const scoreSummary = document.getElementById("scoreSummary");
+
+    let formattedFeedback = "";
+
+    // Split before "Overall Score:"
+    let [linesPart, summaryPart] = feedback.split("Overall Score:");
+    if (summaryPart) {
+      const scoreMatch = summaryPart.match(/(\d+)\/(\d+)/);
+      if (scoreMatch) {
+        score = `${scoreMatch[1]}/${scoreMatch[2]}`;
+      }
+    }
+
+    formattedFeedback = linesPart
+      .split(/\d+\s+\|\s+/g)
+      .filter(line => line.trim())
+      .map(line => {
+        const parts = line.split("//");
+        const code = parts[0].trim();
+        const comment = parts[1] ? parts[1].trim() : "";
+        const isCorrect = comment.toLowerCase().includes("correct");
+        return `
+          <div class="feedback-line" style="margin-bottom: 10px;">
+            <span style="display:block; font-weight:500; color:#0f172a;">${code}</span>
+            <span style="display:block; font-size:13px; color:${isCorrect ? '#16a34a' : '#dc2626'};">${comment}</span>
+          </div>
+        `;
+      }).join("");
+
+    // Final summary and download
+    formattedFeedback += `
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 20px;">
+        <strong style="color:#0f172a;">Score:</strong> ${score}<br>
+        ${gradingFileURL ? `<a href="${gradingFileURL}" target="_blank" style="color:#0f766e; display:block; margin-top:6px;">📎 View Graded PDF</a>` : ""}
+      </div>
+    `;
+
+    // Score bar
+    const scoreValue = parseInt(score.split("/")[0]) || 0;
+const scoreMax = parseInt(score.split("/")[1]) || 10;
+const percentage = Math.round((scoreValue / scoreMax) * 100);
+scoreSummary.innerHTML = `
+  <div style="background: #e5e7eb; border-radius: 10px; height: 8px; margin-bottom: 10px;">
+    <div style="width: ${percentage}%; background: #38bdf8; height: 100%; border-radius: 10px;"></div>
+  </div>
+  <div style="font-size: 13px; color: #0f172a;">Score: ${score}</div>
+`;
+
+    modalContent.innerHTML = formattedFeedback;
+    document.getElementById("feedbackModal").style.display = "block";
+
+    document.getElementById("closeModal").onclick = function () {
+  document.getElementById("feedbackModal").style.display = "none";
+  document.body.style.overflow = "auto";
+};
+  }
+      </script>
+
+
+
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
+
+
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+      authDomain: "fyp-ai-3a972.firebaseapp.com",
+      projectId: "fyp-ai-3a972",
+      storageBucket: "fyp-ai-3a972.firebasestorage.app",
+      messagingSenderId: "1095317736019",
+      appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const assignmentGrid = document.getElementById("assignmentGrid");
+    const storage = getStorage(app);
+
+
+    function getStatusClass(status) {
+      if (!status) return "not-submitted";
+      const lowered = status.toLowerCase();
+      if (lowered === "graded") return "att";
+      if (["submitted", "pending"].includes(lowered)) return "soon";
+      return "not-submitted";
+    }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
+
+        const uid = user.uid;
+        const userDoc = await getDoc(doc(db, "students", uid));
+
+        if (!userDoc.exists()) {
+          console.error("User data not found in Firestore");
+          return;
+        }
+
+        const studentID = userDoc.data().studentID;
+
+        // Fetch submissions
+        const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+        const submissionsMap = {};
+        submissionsSnapshot.forEach((doc) => {
+          const sub = doc.data();
+          if (sub.studentID === studentID) {
+            submissionsMap[sub.assignmentId] = sub;
+          }
+        });
+
+      // Fetch assignments
+      const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
+      assignmentGrid.innerHTML = "";
+
+      assignmentsSnapshot.forEach((doc) => {
+        const assignment = doc.data();
+        const assignmentId = doc.id;
+        const submission = submissionsMap[assignmentId];
+        console.log("Status:", submission?.status, "Released:", submission?.released, "AssignmentID:", assignmentId);
+
+
+
+    let rawStatus = (submission?.status || "not submitted").toString().trim().toLowerCase();
+      const isReleased = submission?.released === true;
+      const isGraded = (rawStatus === "graded" || rawStatus === "released") && isReleased;
+
+
+  let status = "Not Submitted";
+
+  if (rawStatus === "submitted" || rawStatus === "pending") {
+    status = "Pending";
+    
+  } else if (rawStatus === "graded" && isReleased) {
+    status = "Graded";
+  } else if (rawStatus === "graded" && !isReleased) {
+    status = "Pending";
+  } else if (rawStatus === "released") {
+    status = "Graded";
+  }
+
+  const statusClass = getStatusClass(status);
+
+
+
+        const badgeColor = {
+          "submitted": "#c7f9cc",
+          "pending": "#fde68a",
+          "graded": "#a7f3d0",
+          "not submitted": "#fca5a5"
+        };
+
+        const badgeTextColor = {
+          "submitted": "#166534",
+          "pending": "#92400e",
+          "graded": "#065f46",
+          "not submitted": "#991b1b"
+        };
+
+        const color = badgeColor[status.toLowerCase()] || "#e2e8f0";
+        const textColor = badgeTextColor[status.toLowerCase()] || "#334155";
+        const title = assignment.title || "Untitled";
+        const dueDate = assignment.dueDate || "No due date";
+
+      let submissionBlock = "";
+
+          if (isGraded && isReleased) {
+            const feedbackRaw = submission.feedback || "";
+            const shortPreview = feedbackRaw.length > 60 ? feedbackRaw.substring(0, 60) + "..." : feedbackRaw;
+            const encodedFeedback = encodeURIComponent(feedbackRaw);
+
+            console.log("Status:", submission?.status, "Released:", submission?.released);
+
+            submissionBlock = `
+              <div style="margin-top: 6px;">
+                <span style="display:inline-block; background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:6px; font-size:15px; font-weight:500;">
+                  Score: ${submission.grade}
+                </span>
+                ${submission.gradingFileURL ? `<a href="${submission.gradingFileURL}" target="_blank" style="color:#0f766e; display:block; margin-top:8px;">📎 View Graded File</a>` : ""}
+                <button 
+                  data-feedback="${encodedFeedback}" 
+                  onclick="openFeedbackModal(decodeURIComponent(this.dataset.feedback), '${submission.grade}', '${submission.gradingFileURL || ''}')"
+                  style="margin-top:10px; background:#f1f5f9; border:none; color:#0f172a; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">
+                  💬 View Full Feedback
+                </button>
+
+              </div>
+            `;
+          }
+        else if (submission?.status?.toLowerCase() === "submitted" || submission?.status?.toLowerCase() === "pending") {
+          submissionBlock = `
+            <div style="margin-top: 6px;">
+              ${
+                submission.fileURL
+                  ? `<a href="${submission.fileURL}" target="_blank" style="color:#047857; display:block; margin-top:6px;">
+                      🔍 View Submission
+                    </a>`
+                  : `<span style="color:#6b7280;">No submission file</span>`
+              }
+            </div>
+          `;
+  }
+        else if (!submission || (!submission.status && !isGraded)) {
+            // Only show upload if no submission OR it's not graded
+            submissionBlock = `
+              <div style="margin-top: 10px;">
+                <button onclick="openUploadModal('${assignmentId}')" 
+                  style="background:#2563eb; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer;">
+                  ⬆️ Upload Submission
+                </button>
+              </div>
+            `;
+          }
+
+
+        const card = `
+          <div class="col-lg-4 templatemo-item-col all ${statusClass}">
+            <div class="meeting-item" style="background: #ffffff; border-radius: 20px; padding: 25px; box-shadow: 0 6px 20px rgba(0,0,0,0.08);">
+              <div style="background-color: ${color}; color: ${textColor}; border-radius: 12px; padding: 6px 14px; font-size: 13px; font-weight: 600; display: inline-block;">
+                ${status.charAt(0).toUpperCase() + status.slice(1)}
+              </div>
+              <div class="down-content text-left mt-3">
+              <p style="font-size: 13px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Due: ${dueDate}</p>
+              <h5 style="font-size: 15px; font-weight: 600; color: #dc2626;">${title}</h5>
+                <a href="${assignment.assignmentFileURL}" target="_blank" style="color: #2563eb; font-size: 14px; display: block;">📄 View Assignment</a>
+              ${submissionBlock}
+              </div>
+            </div>
+          </div>
+        `;
+
+        assignmentGrid.innerHTML += card;
+      });
+
+      const iso = new Isotope('.grid', {
+        itemSelector: '.templatemo-item-col',
+        layoutMode: 'fitRows'
+      });
+
+      document.querySelectorAll('.filters li').forEach(btn => {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.filters li').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          const filterValue = this.getAttribute('data-filter');
+          iso.arrange({ filter: filterValue });
+        });
+      });
+    });
+
+
+  
+  let currentAssignmentId = null;
+
+  window.openUploadModal = function (assignmentId) {
+    currentAssignmentId = assignmentId;
+    const modal = document.getElementById("uploadModal");
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    document.getElementById("fileList").innerHTML = "";
+    document.getElementById("fileInput").value = "";
+  }
+
+  window.closeUploadModal = function () {
+    const modal = document.getElementById("uploadModal");
+    modal.classList.remove("active");
+    modal.style.display = "none";
+  }
+
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const browseBtn = document.getElementById("browseBtn");
+    const fileInput = document.getElementById("fileInput");
+
+    if (browseBtn && fileInput) {
+      browseBtn.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (typeValidation(file.type)) {
+            uploadFile(file);
+          } else {
+            alert("Only PDF and image files are allowed.");
+          }
+        }
+      });
+    }
+
+    // Optional drag-and-drop support
+    const dropArea = document.getElementById('drop-area');
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.classList.add('drag-over');
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.classList.remove('drag-over');
+    });
+
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropArea.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && typeValidation(file.type)) {
+      uploadFile(file);
+    } else {
+      alert("Only PDF and image files are allowed.");
+    }
+  });
+});
+
+function typeValidation(fileType) {
+  return fileType === "application/pdf" || fileType.startsWith("image/");
+}
+
+function uploadFile(file) {
+  if (!currentAssignmentId) {
+    alert("Assignment ID missing. Please refresh and try again.");
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in.");
+    return;
+  }
+
+  const fileItem = document.createElement('div');
+  fileItem.className = 'file-item';
+  const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+  fileItem.innerHTML = `
+    <strong>${file.name}</strong>
+    <span class="file-size">${sizeMB < 0.01 ? '0.01 MB' : `${sizeMB} MB`}</span>
+    <div class="file-progress"><span style="width:0%"></span></div>
+    <div class="cancel-btn" style="cursor:pointer;">&times;</div>
+  `;
+  document.getElementById("fileList").appendChild(fileItem);
+
+  const progressBar = fileItem.querySelector('.file-progress span');
+  const cancelBtn = fileItem.querySelector('.cancel-btn');
+
+  const storageRef = ref(storage, `submissions/${user.uid}/${currentAssignmentId}/${file.name}`);
+  const uploadTask = uploadBytesResumable(storageRef, file);
+
+  cancelBtn.onclick = () => {
+    uploadTask.cancel();
+    fileItem.remove();
+  };
+
+  uploadTask.on('state_changed',
+    (snapshot) => {
+      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      progressBar.style.width = `${progress.toFixed(1)}%`;
+    },
+    (error) => {
+      console.error("Upload failed:", error);
+      fileItem.remove();
+      alert("Failed to upload file. Please try again.");
+    },
+
+
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        const studentSnap = await getDoc(doc(db, "students", user.uid));
+        const studentData = studentSnap.data();
+
+        // Get assignment details
+        const assignmentSnap = await getDoc(doc(db, "assignments", currentAssignmentId));
+        const assignment = assignmentSnap.data();
+
+        await setDoc(doc(db, "submissions", `${user.uid}_${currentAssignmentId}`), {
+          studentID: studentData.studentID,
+          studentName: studentData.firstname,
+          assignmentId: currentAssignmentId,
+          assignmentTitle: assignment?.title || "Untitled Assignment",
+          fileURL: downloadURL,
+          status: "Pending",
+          submittedAt: serverTimestamp()
+        });
+
+        cancelBtn.remove();
+        progressBar.style.width = '100%';
+        progressBar.style.backgroundColor = '#4CAF50';
+
+        const successText = document.createElement('div');
+        successText.className = 'success-text';
+        successText.innerText = '✅ Upload successful';
+        fileItem.appendChild(successText);
+
+        setTimeout(() => {
+          closeUploadModal();
+          location.reload();
+        }, 1500);
+      }
+  );
+}
+
+
+</script>
+
+
+<script>
+function openFeedbackModal(feedback, score = "", gradingFileURL = "") {
+  const modalContent = document.getElementById("modalContent");
+  const scoreSummary = document.getElementById("scoreSummary");
+
+  let formattedFeedback = "";
+
+  // ✅ Extract Final Feedback if exists
+  let finalFeedback = "";
+  const finalIndex = feedback.indexOf("Final Feedback:");
+  if (finalIndex !== -1) {
+    finalFeedback = feedback.slice(finalIndex).trim();
+    feedback = feedback.slice(0, finalIndex).trim();
+  }
+
+  // ✅ Extract score from feedback if not passed
+  let summaryPart = "";
+  if (!score && feedback.includes("Overall Score:")) {
+    [feedback, summaryPart] = feedback.split("Overall Score:");
+    const match = summaryPart.match(/(\d+)\s*\/\s*(\d+)/);
+    if (match) {
+      score = `${match[1]}/${match[2]}`;
+    }
+  }
+
+  // ✅ Format code lines + comments
+  formattedFeedback = feedback
+    .split("\n")
+    .filter(line => line.trim())
+    .map(line => {
+      const parts = line.split("//");
+      const code = parts[0].trim();
+      const comment = parts[1] ? parts[1].trim() : "";
+      const isCorrect = comment.toLowerCase().includes("correct");
+      return `
+        <div class="feedback-line" style="margin-bottom: 10px;">
+          <span style="display:block; font-weight:500; color:#0f172a;">${code}</span>
+          <span style="display:block; font-size:13px; color:${isCorrect ? '#16a34a' : '#dc2626'};">${comment}</span>
+        </div>
+      `;
+    }).join("");
+
+  // ✅ Append Final Feedback Paragraph
+  if (finalFeedback) {
+    formattedFeedback += `
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 20px;">
+        <p style="color: #dc2626; font-size: 14px; line-height: 1.6;">${finalFeedback}</p>
+      </div>
+    `;
+  }
+
+  // ✅ Add score progress bar
+  let scoreValue = 0, scoreMax = 0;
+  if (score.includes("/")) {
+    const [val, max] = score.split("/").map(Number);
+    if (!isNaN(val) && !isNaN(max)) {
+      scoreValue = val;
+      scoreMax = max;
+    }
+  }
+  const percentage = scoreMax > 0 ? Math.round((scoreValue / scoreMax) * 100) : 0;
+
+  scoreSummary.innerHTML = `
+    <div style="background: #e5e7eb; border-radius: 10px; height: 8px; margin-bottom: 10px;">
+      <div style="width: ${percentage}%; background: #38bdf8; height: 100%; border-radius: 10px;"></div>
+    </div>
+    <div style="font-size: 13px; color: #0f172a;">Score: ${scoreValue}/${scoreMax}</div>
+  `;
+
+  // ✅ Append grading file download
+  if (gradingFileURL) {
+    formattedFeedback += `
+      <div style="margin-top: 20px;">
+        <a href="${gradingFileURL}" target="_blank" style="color:#0f766e; text-decoration: underline;">
+          📎 View Graded PDF File
+        </a>
+      </div>
+    `;
+  }
+
+  modalContent.innerHTML = formattedFeedback;
+  document.getElementById("feedbackModal").style.display = "block";
+
+  document.getElementById("closeModal").onclick = function () {
+    document.getElementById("feedbackModal").style.display = "none";
+    document.body.style.overflow = "auto";
+  };
+
+  // Optional logs
+  console.log("Raw feedback:", feedback);
+  console.log("Score:", score);
+  console.log("Grading File:", gradingFileURL);
+}
+</script>
+
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("closeModal").onclick = function () {
+      document.getElementById("feedbackModal").style.display = "none";
+    };
+  });
+</script>
+
+</body>
+</html>

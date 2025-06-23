@@ -1,17 +1,16 @@
-# Ignore secret files
+# Ignore sensitive or unnecessary files
 *.json
 *.txt
-!requirements.txt
-!railway.json
-grading.py
-
-# Node modules (if using npm)
-node_modules/
-
+.env
 key.b64.txt
 
-# VSCode settings
-.vscode/
+# Allow specific known-safe files
+!requirements.txt
+!railway.json
 
-# Ignore everything else by default
-*
+# Ignore Python environment folders and cache
+venv/
+__pycache__/
+
+# Optional: VSCode
+.vscode/
