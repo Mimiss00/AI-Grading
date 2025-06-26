@@ -12,5 +12,6 @@ openai
 gunicorn
 reportlab
 flask-bcrypt
+python-dotenv
 
 
