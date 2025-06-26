@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 load_dotenv()
 # ========== CONFIGURATION ==========
 # Set your API keys and JSON paths
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+openai_api_key = os.environ.get("OPENAI_API_KEY")
 
 # ==== Google Vision API Setup ====
 vision_base64 = os.getenv("GOOGLE_VISION_JSON_BASE64")
