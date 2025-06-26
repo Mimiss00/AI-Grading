@@ -1,9 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, setDoc, addDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc, addDoc, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js"; // ✅ Add this line
+import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-
+import { query, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -20,44 +20,88 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    let docRef = doc(db, "students", user.uid);
-    let docSnap = await getDoc(docRef);
+let currentAssignmentId = null;
 
-    // 🔄 Try fallback if doc not found by UID
-    if (!docSnap.exists()) {
-      const allStudents = await getDocs(collection(db, "students"));
-      for (const oldDoc of allStudents.docs) {
-        const data = oldDoc.data();
-        if (data.email === user.email) {
-          await setDoc(doc(db, "students", user.uid), data);  // copy
-          await deleteDoc(doc(db, "students", oldDoc.id));     // delete old
-          console.log(`✅ Migrated ${user.email} to UID ${user.uid}`);
-          docSnap = await getDoc(doc(db, "students", user.uid));
-          break;
-        }
-      }
-    }
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      localStorage.setItem("studentID", data.studentID);
-      localStorage.setItem("studentData", JSON.stringify(data));
-    } else {
-      console.warn("⚠️ Student data still not found. May cause issues in submissions.");
-    }
-  }
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  initializeDragAndDrop();
+  loadStudentName();
 });
 
+function initializeDragAndDrop() {
+  const dropArea = document.getElementById('drop-area');
+  const fileInput = document.getElementById('fileInput');
+  const browseBtn = document.getElementById('browseBtn');
 
-let currentAssignmentId = null;
+  // Browse button click handler
+  browseBtn.addEventListener('click', () => fileInput.click());
+
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // Highlight drop area when item is dragged over it
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, highlight, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, unhighlight, false);
+  });
+
+  function highlight() {
+    dropArea.classList.add('highlight');
+  }
+
+  function unhighlight() {
+    dropArea.classList.remove('highlight');
+  }
+
+  // Handle dropped files
+  dropArea.addEventListener('drop', handleDrop, false);
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    handleFiles(files);
+  }
+
+  // Handle file selection via input
+  fileInput.addEventListener('change', function() {
+    handleFiles(this.files);
+  });
+}
+
+function handleFiles(files) {
+  if (files.length > 0) {
+    const file = files[0];
+    if (typeValidation(file.type)) {
+      const fileList = document.getElementById('fileList');
+      fileList.innerHTML = `
+        <div>
+          <span>${file.name}</span>
+          <span>${(file.size / 1024).toFixed(2)} KB</span>
+        </div>
+      `;
+      // Auto-upload after selection
+      uploadSubmission(file);
+    } else {
+      alert('Only PDF and image files are allowed.');
+    }
+  }
+}
 
 function typeValidation(type) {
   const splitType = type.split('/')[0];
   return type === 'application/pdf' || splitType === 'image';
 }
-
 
 function openUploadModal(assignmentId) {
   currentAssignmentId = assignmentId;
@@ -68,39 +112,29 @@ function closeUploadModal() {
   document.getElementById("uploadModal").classList.remove('active');
   document.getElementById("fileInput").value = "";
   document.getElementById("fileList").innerHTML = "";
+  document.getElementById('uploadProgress').style.width = '0%';
 }
 
-// 👇 expose globally
-window.openUploadModal = openUploadModal;
-window.closeUploadModal = closeUploadModal;
-
-
-function loadStudentName() {
-  const studentData = JSON.parse(localStorage.getItem("studentData"));
-
-  if (studentData && studentData.firstname) {
-    document.getElementById("student-greeting").innerText = `Hello, ${studentData.firstname}`;
-  } else {
-    console.warn("Student data not found in localStorage.");
-    document.getElementById("student-greeting").innerText = "Hello, Student";
+async function uploadSubmission(file) {
+  if (!file) {
+    file = document.getElementById('fileInput').files[0];
   }
+
+  const studentSnap = await getDoc(doc(db, "students", auth.currentUser.uid));
+if (!studentSnap.exists()) {
+  alert("Student profile not found. Please contact support.");
+  return;
 }
-
-
-async function uploadSubmission() {
-  const file = document.getElementById('fileInput').files[0];
-  const studentID = localStorage.getItem("studentID");
+const studentData = studentSnap.data();
+const studentID = studentData.studentID;
 
   if (!file || !studentID || !currentAssignmentId) {
     alert("Please select a file and ensure you are logged in.");
     return;
   }
 
-  const confirmBtn = document.getElementById('confirmUpload');
-  confirmBtn.disabled = true;
-
   try {
-    const storagePath = `submissions/${studentID}/${currentAssignmentId}/${file.name}`;
+    const storagePath = `submissions/${auth.currentUser.uid}/${currentAssignmentId}/${file.name}`;
     const storageRef = ref(storage, storagePath);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -112,11 +146,10 @@ async function uploadSubmission() {
       (error) => {
         console.error("Upload failed:", error);
         alert("Upload failed: " + error.message);
-        confirmBtn.disabled = false;
       },
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-      await setDoc(doc(db, "submissions", `${studentID}_${currentAssignmentId}`), {
+        await setDoc(doc(db, "submissions", `${studentID}_${currentAssignmentId}`), {
           studentID,
           assignmentID: currentAssignmentId,
           fileURL: downloadURL,
@@ -127,30 +160,84 @@ async function uploadSubmission() {
 
         alert("Submission uploaded successfully!");
         closeUploadModal();
-        updateStats();
+        loadAssignments(); // Refresh assignments list
       }
     );
   } catch (error) {
     console.error("Error uploading:", error);
     alert("Error: " + error.message);
-    confirmBtn.disabled = false;
+  }
+}
+
+// Auth state and student data handling
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    let docRef = doc(db, "students", user.uid);
+    let docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      const allStudents = await getDocs(collection(db, "students"));
+      for (const oldDoc of allStudents.docs) {
+        const data = oldDoc.data();
+        if (data.email === user.email) {
+          await setDoc(doc(db, "students", user.uid), data);
+          await deleteDoc(doc(db, "students", oldDoc.id));
+          console.log(`✅ Migrated ${user.email} to UID ${user.uid}`);
+          docSnap = await getDoc(doc(db, "students", user.uid));
+          break;
+        }
+      }
+    }
+    
+    await loadAssignments();
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      localStorage.setItem("studentID", data.studentID);
+      localStorage.setItem("studentData", JSON.stringify(data));
+      loadStudentName();
+    } else {
+      console.warn("⚠️ Student data still not found. May cause issues in submissions.");
+    }
+  }
+});
+
+function loadStudentName() {
+  const studentData = JSON.parse(localStorage.getItem("studentData"));
+
+  if (studentData && studentData.firstname) {
+    document.getElementById("student-greeting").innerText = `Hello, ${studentData.firstname}`;
+  } else {
+    document.getElementById("student-greeting").innerText = "Hello, Student";
   }
 }
 
 async function loadAssignments() {
   const accordionDiv = document.getElementById("assignmentAccordion");
   const today = new Date();
-  const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
-  let hasAssignments = false;
-
   accordionDiv.innerHTML = '';
 
-  assignmentsSnapshot.forEach((doc) => {
-    const data = doc.data();
+  const studentData = JSON.parse(localStorage.getItem("studentData"));
+  const classCode = studentData?.joinedClass?.code;
+
+  if (!classCode) {
+    accordionDiv.innerHTML = "<p style='text-align: center; color: #666;'>No class assigned.</p>";
+    return;
+  }
+
+  const q = query(collection(db, "assignments"), where("classCode", "==", classCode));
+  const assignmentsSnapshot = await getDocs(q);
+
+  let hasAssignments = false;
+  const uid = auth.currentUser.uid;
+
+  for (const assignmentDoc of assignmentsSnapshot.docs) {
+    const data = assignmentDoc.data();
     const dueDate = new Date(data.dueDate);
 
     if (dueDate >= today) {
       hasAssignments = true;
+      const assignmentId = assignmentDoc.id;
       const title = data.title || "Untitled";
       const description = data.description || "No description available.";
       const fileURL = data.assignmentFileURL || "#";
@@ -159,10 +246,28 @@ async function loadAssignments() {
         year: "numeric", month: "short", day: "numeric"
       });
 
+      // 🔍 Check submission
+      const submissionId = `${uid}_${assignmentId}`;
+      const submissionSnap = await getDoc(doc(db, "submissions", submissionId));
+
+      let uploadButtonHTML = "";
+      if (!submissionSnap.exists()) {
+        uploadButtonHTML = `
+          <button class="action-btn upload-btn" onclick="openUploadModal('${assignmentId}')">
+            <i class="fas fa-upload"></i> Upload Submission
+          </button>
+        `;
+      } else {
+        uploadButtonHTML = `
+          <span class="badge bg-success text-light">✅ Submitted</span>
+        `;
+      }
+
       const assignmentItem = document.createElement('div');
       assignmentItem.classList.add('assignment-item');
+      assignmentItem.id = `assignment-${assignmentId}`;
 
-   assignmentItem.innerHTML = `
+      assignmentItem.innerHTML = `
         <div class="assignment-header">
           <div class="assignment-info">
             <h4>${title}</h4>
@@ -176,20 +281,19 @@ async function loadAssignments() {
         <div class="assignment-details">
           <p>Desc: ${description}</p>
           <a href="${fileURL}" target="_blank" class="view-assignment-btn">View Assignment</a>
-          <button class="action-btn upload-btn" onclick="openUploadModal('${doc.id}')">
-            <i class="fas fa-upload"></i> Upload Submission
-          </button>
+          ${uploadButtonHTML}
         </div>
       `;
 
       accordionDiv.appendChild(assignmentItem);
     }
-  });
+  }
 
   if (!hasAssignments) {
     accordionDiv.innerHTML = "<p style='text-align: center; color: #666;'>No upcoming assignments found.</p>";
   }
 
+  // Accordion toggle functionality
   const items = document.querySelectorAll('.assignment-item');
   items.forEach(item => {
     const header = item.querySelector('.assignment-header');
@@ -204,62 +308,8 @@ async function loadAssignments() {
   });
 }
 
-async function updateStats() {
-  const studentID = localStorage.getItem("studentID");
-  if (!studentID) return;
 
-  const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
-  const submissionsSnapshot = await getDocs(collection(db, "submissions"));
-
-  console.log("✅ Student ID from localStorage:", studentID);
-  console.log("📘 Assignments count:", assignmentsSnapshot.size);
-  console.log("📗 Submissions count:", submissionsSnapshot.size);
-
-  let totalCount = 0;
-  let submittedCount = 0;
-  let notSubmittedCount = 0;
-  let gradeTotal = 0;
-  let gradeCount = 0;
-  const submissionsMap = {};
-
-  submissionsSnapshot.forEach((doc) => {
-    const data = doc.data();
-    if (data.studentID === studentID) {
-      submissionsMap[data.assignmentID] = data;
-    }
-  });
-
-  assignmentsSnapshot.forEach((doc) => {
-    const assignmentID = doc.id;
-    totalCount++;
-    const submission = submissionsMap[assignmentID];
-
-    if (submission && submission.status === "submitted") {
-      submittedCount++;
-      const grade = submission.grade || "";
-      if (grade.includes("/")) {
-        const [scored, max] = grade.split("/").map(Number);
-        if (!isNaN(scored) && !isNaN(max) && max > 0) {
-          gradeTotal += (scored / max) * 100;
-          gradeCount++;
-        }
-      }
-    } else {
-      notSubmittedCount++;
-    }
-  });
-
-  const average = gradeCount > 0 ? (gradeTotal / gradeCount).toFixed(2) : "--";
-
-  document.getElementById("totalCount").innerText = totalCount;
-  document.getElementById("submittedCount").innerText = submittedCount;
-  document.getElementById("notSubmittedCount").innerText = notSubmittedCount;
-  document.getElementById("averageGrade").innerText = average + "%";
-}
-
-
-window.addEventListener('DOMContentLoaded', async () => {
-  await loadStudentName();   // <--- Missing
-  await loadAssignments();   // <--- Missing
-  await updateStats();       // <--- Optional, but recommended
-});
+// Expose functions to global scope
+window.openUploadModal = openUploadModal;
+window.closeUploadModal = closeUploadModal;
+window.uploadSubmission = uploadSubmission;

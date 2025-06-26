@@ -9,7 +9,7 @@
     <meta name="author" content="Template Mo">
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
 
-    <title>Stusent Page</title>
+    <title>Student Page</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
@@ -41,9 +41,9 @@
               <div class="col-12">
                   <nav class="main-nav">
                       <!-- ***** Logo Start ***** -->
-                      <a href="{{ url_for('student.student_dashboard') }}" class="logo">
-                          MIGRADE
-                      </a>
+                       <a href="{{ url_for('student.student_dashboard') }}" class="logo">
+                          <img src="{{ url_for('static', filename='images/AI-logo.png') }}" alt="Logo" style="height: 120px; vertical-align: middle;">
+                        </a>
                       <!-- ***** Logo End ***** -->
                       <!-- ***** Menu Start ***** -->
                       <ul class="nav">
@@ -53,8 +53,8 @@
                               <span class="toggle" style="font-size: 28px;">
                               <i class="fas fa-user-circle"></i>
                               <ul class="sub-menu">
-                                <li><a href="profile.html">Profile</a></li>
-                                <li><a href="logout.html">Logout</a></li>
+                                <li><a href="#" data-bs-toggle="modal" data-bs-target="#studentProfileModal">Profile</a></li>
+                                <li><a href="{{ url_for('student.login_student') }}">Logout</a></li>
                               </ul>
                             </span>
                           </li>
@@ -133,7 +133,28 @@
   </div>
 </div>
 
+<div class="modal fade" id="studentProfileModal" tabindex="-1" aria-labelledby="studentProfileLabel">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="studentProfileLabel">Student Profile</h5>
+        <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <i class="fas fa-user-graduate fa-4x text-secondary"></i>
+        </div>
+        <h5 id="studentName" class="mb-1 fw-bold">Loading...</h5>
+        <p id="studentEmail" class="text-muted">Loading...</p>
+        <p id="studentID" class="text-muted">Loading...</p>
 
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Scripts -->
   <!-- Bootstrap core JavaScript -->
@@ -321,6 +342,12 @@ scoreSummary.innerHTML = `
         }
 
         const studentID = userDoc.data().studentID;
+        const studentClassCode = userDoc.data().joinedClass?.code;
+        if (!studentClassCode) {
+          console.warn("No classCode found in student profile.");
+          return;
+        }
+        
 
         // Fetch submissions
         const submissionsSnapshot = await getDocs(collection(db, "submissions"));
@@ -338,9 +365,18 @@ scoreSummary.innerHTML = `
 
       assignmentsSnapshot.forEach((doc) => {
         const assignment = doc.data();
+
+        if (assignment.classCode?.trim() !== studentClassCode?.trim()) return;
+
+        console.log("Assignment classCode:", assignment.classCode);
+        console.log("Student classCode:", studentClassCode);
+
+
         const assignmentId = doc.id;
         const submission = submissionsMap[assignmentId];
         console.log("Status:", submission?.status, "Released:", submission?.released, "AssignmentID:", assignmentId);
+
+        
 
 
 
@@ -384,6 +420,19 @@ scoreSummary.innerHTML = `
         const textColor = badgeTextColor[status.toLowerCase()] || "#334155";
         const title = assignment.title || "Untitled";
         const dueDate = assignment.dueDate || "No due date";
+        const today = new Date();
+        const due = new Date(assignment.dueDate); // make sure this is in YYYY-MM-DD format
+        const timeDiff = due - today;
+        const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+        let daysLeftText = '';
+          if (daysLeft > 0) {
+            daysLeftText = `<p style="font-size: 12px; color: #059669; margin: 0;">🕒 ${daysLeft} day(s) left</p>`;
+          } else if (daysLeft === 0) {
+            daysLeftText = `<p style="font-size: 12px; color: #d97706; margin: 0;">⚠️ Due Today</p>`;
+          } else {
+            daysLeftText = `<p style="font-size: 12px; color: #dc2626; margin: 0;">⏰ Overdue</p>`;
+          }
 
       let submissionBlock = "";
 
@@ -436,21 +485,64 @@ scoreSummary.innerHTML = `
           }
 
 
-        const card = `
-          <div class="col-lg-4 templatemo-item-col all ${statusClass}">
-            <div class="meeting-item" style="background: #ffffff; border-radius: 20px; padding: 25px; box-shadow: 0 6px 20px rgba(0,0,0,0.08);">
-              <div style="background-color: ${color}; color: ${textColor}; border-radius: 12px; padding: 6px 14px; font-size: 13px; font-weight: 600; display: inline-block;">
-                ${status.charAt(0).toUpperCase() + status.slice(1)}
-              </div>
-              <div class="down-content text-left mt-3">
-              <p style="font-size: 13px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Due: ${dueDate}</p>
-              <h5 style="font-size: 15px; font-weight: 600; color: #dc2626;">${title}</h5>
-                <a href="${assignment.assignmentFileURL}" target="_blank" style="color: #2563eb; font-size: 14px; display: block;">📄 View Assignment</a>
-              ${submissionBlock}
-              </div>
-            </div>
-          </div>
-        `;
+const card = `
+  <div class="col-lg-4 templatemo-item-col all ${statusClass}">
+    <div class="meeting-item" style="
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    ">
+      <div style="
+        background-color: ${color};
+        color: ${textColor};
+        border-radius: 12px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+        width: fit-content;
+      ">
+        ${status.charAt(0).toUpperCase() + status.slice(1)}
+      </div>
+
+
+        <div class="down-content text-left">
+          <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin: 0;">
+            📅 Due: ${assignment.dueDate}
+          </p>
+          ${
+            !(assignment.graded && assignment.released) 
+              ? `<p style="font-size: 13px; color: ${daysLeft < 0 ? '#dc2626' : '#059669'}; margin: 0;">
+                  ⏰ ${daysLeft > 0 ? `${daysLeft} day(s) left` : daysLeft === 0 ? 'Due Today' : 'Overdue'}
+                </p>` 
+              : ''
+          }
+
+        <h5 style="font-size: 16px; font-weight: 700; color: #dc2626; margin-top: 10px; margin-bottom: 5px;">
+          ${assignment.title}
+        </h5>
+
+        <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">
+          ${assignment.description || 'No description'}
+        </p>
+
+        <a href="${assignment.assignmentFileURL}" target="_blank" style="
+          color: #2563eb;
+          font-size: 14px;
+          display: inline-block;
+          margin-bottom: 10px;
+        ">📄 View Assignment</a>
+
+        ${submissionBlock}
+      </div>
+    </div>
+  </div>
+`;
+
 
         assignmentGrid.innerHTML += card;
       });
@@ -619,6 +711,34 @@ function uploadFile(file) {
       }
   );
 }
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const studentRef = doc(db, "students", user.uid);
+      const studentSnap = await getDoc(studentRef);
+
+      if (studentSnap.exists()) {
+        const data = studentSnap.data();
+
+        document.getElementById('studentName').textContent = data.firstname || "No Name";
+        document.getElementById('studentEmail').textContent = data.email || user.email;
+        document.getElementById('studentID').textContent = "ID: " + (data.studentID || "N/A");
+        document.getElementById('studentClass').textContent = "Class: " + (data.joinedClass?.code || "N/A");
+
+      } else {
+        document.getElementById('studentName').textContent = "Unknown";
+        document.getElementById('studentEmail').textContent = user.email;
+        document.getElementById('studentID').textContent = "ID: N/A";
+        document.getElementById('studentClass').textContent = "Class: N/A";
+      }
+
+    } catch (err) {
+      console.error("Error fetching student profile:", err);
+    }
+  }
+});
+
+
 
 
 </script>

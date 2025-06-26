@@ -42,7 +42,9 @@
                   <nav class="main-nav">
                       <!-- ***** Logo Start ***** -->
                       <a href="{{ url_for('lecturer.dashboard_lecturer') }}" class="logo">
-                          MIGRADE
+                        <img src="{{ url_for('static', filename='images/AI-logo.png') }}" alt="Logo" style="height: 120px; vertical-align: middle;">
+                        </a>
+                        
                       </a>
                       <!-- ***** Logo End ***** -->
                       <!-- ***** Menu Start ***** -->
@@ -63,8 +65,8 @@
                               <span class="toggle" style="font-size: 28px;">
                               <i class="fas fa-user-circle"></i>
                               <ul class="sub-menu">
-                                <li><a href="profile.html">Profile</a></li>
-                                <li><a href="logout.html">Logout</a></li>
+                                <li><a href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Profile</a></li>
+                                <li><a href="{{ url_for('lecturer.login_lecturer') }}">Logout</a></li>
                               </ul>
                             </span>
                           </li>
@@ -183,6 +185,28 @@
 </section>
 
 
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="profileModalLabel">Lecturer Profile</h5>
+        <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <i class="fas fa-user-circle fa-4x text-secondary"></i>
+        </div>
+        <h5 id="lecturerName" class="mb-1 fw-bold">Loading...</h5>
+        <p id="lecturerEmail" class="text-muted">Loading...</p>
+         <p id="lecturerCode" class="text-muted">Loading code...</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
   <!-- Scripts -->
@@ -232,9 +256,11 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-  import { getFirestore, collection, getDocs, deleteDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
 
   // Firebase Config
   const firebaseConfig = {
@@ -260,11 +286,24 @@
   const pagination = document.getElementById("pagination");
 
   async function loadAssignments() {
-    const snapshot = await getDocs(collection(db, "assignments"));
-    assignments = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-    renderTable();
-    renderPagination();
-  }
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          alert("Please login to view assignments.");
+          return;
+        }
+
+        const q = collection(db, "assignments");
+        const snapshot = await getDocs(q);
+
+
+        assignments = snapshot.docs
+          .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+          .filter(a => a.uploader === user.email);
+
+        renderTable();
+        renderPagination();
+      });
+    }
 
   function renderTable() {
     const searchQuery = searchInput.value.toLowerCase();
@@ -327,7 +366,7 @@
   loadAssignments();
 
   // ✅ Upload with auth check and loading
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (!user) {
       alert("❌ You must be logged in to upload assignments.");
       return;
@@ -335,6 +374,16 @@
 
     document.getElementById("uploadAssignmentForm").addEventListener("submit", async function (e) {
       e.preventDefault();
+
+          // 🔥 Fetch lecturer classCode from Firestore
+        const lecturerDocRef = doc(db, "lecturers", user.uid);
+        const lecturerSnap = await getDoc(lecturerDocRef);
+        if (!lecturerSnap.exists()) {
+          alert("❌ Lecturer class code not found.");
+          return;
+        }
+
+    const lecturerClassCode = lecturerSnap.data().lecturerCode || "";
 
       const title = document.getElementById("title").value.trim();
       const dueDate = document.getElementById("due_date").value;
@@ -361,15 +410,18 @@
         await uploadBytes(schemeRef, answerSchemeFile);
         const answerSchemeFileURL = await getDownloadURL(schemeRef);
 
-        await addDoc(collection(db, "assignments"), {
-          title,
-          dueDate,
-          description,
-          assignmentFileURL,
-          answerSchemeFileURL,
-          uploadedAt: new Date().toISOString(),
-          uploader: user.email || user.uid
-        });
+       await addDoc(collection(db, "assignments"), {
+        title,
+        dueDate,
+        description,
+        assignmentFileURL,
+        answerSchemeFileURL,
+        uploadedAt: new Date().toISOString(),
+        uploader: user.email,
+        lecturer_id: user.uid,
+        lecturer_email: user.email,
+        classCode: lecturerClassCode // ✅ Add this!
+      });
 
         
 
@@ -395,6 +447,35 @@
       }
     });
   });
+
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    try {
+      const lecturersRef = collection(db, "lecturers");
+      const q = query(lecturersRef, where("email", "==", user.email));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        document.getElementById('lecturerName').textContent = data.name || "No Name";
+        document.getElementById('lecturerEmail').textContent = data.email || user.email;
+        document.getElementById('lecturerCode').textContent = "Code: " + (data.lecturerCode || "N/A");
+      } else {
+        document.getElementById('lecturerName').textContent = "Unknown";
+        document.getElementById('lecturerEmail').textContent = user.email;
+        document.getElementById('lecturerCode').textContent = "N/A";
+      }
+    } catch (error) {
+      console.error("Error fetching lecturer profile:", error);
+      document.getElementById('lecturerName').textContent = "Unknown";
+      document.getElementById('lecturerEmail').textContent = user.email;
+    }
+  }
+});
+
+
+    
 </script>
 
 

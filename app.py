@@ -36,6 +36,8 @@ def upload_material():
 def all_assignment():
     return render_template('AssignmentsEdu.html')
 
+
+
 # --- Student Blueprint ---
 student_bp = Blueprint('student', __name__, template_folder=TEMPLATE_DIR)
 
@@ -59,6 +61,11 @@ def student_upload():
 def student_grade():
     return render_template('gradesStud.html')
 
+@student_bp.route('/join-class')
+def join_class():
+    return render_template('studJoin.html')
+
+
 # --- Flask App Setup ---
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.secret_key = 'your_secret_key'
@@ -73,5 +80,4 @@ def role_select():
     return render_template('roleSelect.html')
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))  # Use dynamic port for deployment platforms
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)

@@ -41,9 +41,11 @@
               <div class="col-12">
                   <nav class="main-nav">
                       <!-- ***** Logo Start ***** -->
-                      <a href="{{ url_for('lecturer.dashboard_lecturer') }}" class="logo">
-                          MIGRADE
+                      <a href="{{ url_for('student.student_dashboard') }}" class="logo" style="display: flex; flex-direction: column; align-items: center;">
+                        <img src="{{ url_for('static', filename='images/AI-logo.png') }}" alt="Logo" style="height: 100px;">
                       </a>
+
+             
                       <!-- ***** Logo End ***** -->
                       <!-- ***** Menu Start ***** -->
                      <ul class="nav">
@@ -63,8 +65,8 @@
                               <span class="toggle" style="font-size: 28px;">
                               <i class="fas fa-user-circle"></i>
                               <ul class="sub-menu">
-                                <li><a href="profile.html">Profile</a></li>
-                                <li><a href="logout.html">Logout</a></li>
+                                <li><a href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Profile</a></li>
+                                <li><a href="{{ url_for('lecturer.login_lecturer') }}">Logout</a></li>
                               </ul>
                             </span>
                           </li>
@@ -125,7 +127,27 @@
 </section>
 
 
-
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="profileModalLabel">Lecturer Profile</h5>
+        <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <i class="fas fa-user-circle fa-4x text-secondary"></i>
+        </div>
+        <h5 id="lecturerName" class="mb-1 fw-bold">Loading...</h5>
+        <p id="lecturerEmail" class="text-muted">Loading...</p>
+         <p id="lecturerCode" class="text-muted">Loading code...</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   
 
@@ -174,7 +196,59 @@
   });
 </script>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
+    authDomain: "fyp-ai-3a972.firebaseapp.com",
+    projectId: "fyp-ai-3a972",
+    storageBucket: "fyp-ai-3a972.firebasestorage.app",
+    messagingSenderId: "1095317736019",
+    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  const auth = getAuth(app);
+
+
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    try {
+      const lecturersRef = collection(db, "lecturers");
+      const q = query(lecturersRef, where("email", "==", user.email));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        document.getElementById('lecturerName').textContent = data.name || "No Name";
+        document.getElementById('lecturerEmail').textContent = data.email || user.email;
+        document.getElementById('lecturerCode').textContent = "Code: " + (data.lecturerCode || "N/A");
+      } else {
+        document.getElementById('lecturerName').textContent = "Unknown";
+        document.getElementById('lecturerEmail').textContent = user.email;
+        document.getElementById('lecturerCode').textContent = "N/A";
+      }
+    } catch (error) {
+      console.error("Error fetching lecturer profile:", error);
+      document.getElementById('lecturerName').textContent = "Unknown";
+      document.getElementById('lecturerEmail').textContent = user.email;
+    }
+  }
+});
+
+
+    
+</script>
 
 
 

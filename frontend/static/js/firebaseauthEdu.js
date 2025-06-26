@@ -45,14 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const email = loginForm.querySelector('input[name="email"]').value.trim();
       const password = loginForm.querySelector('input[name="password"]').value.trim();
 
-      if (!email.endsWith("@lecturer.uitm.com")) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Email',
-          text: 'Only @lecturer.uitm.com emails are allowed.'
-        });
-        return;
-      }
 
       if (!email || !password) {
         Swal.fire({
@@ -137,14 +129,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const email = document.getElementById("lecturerEmail").value.trim();
       const password = document.getElementById("registerPassword").value.trim();
 
-      if (!email.endsWith("@lecturer.uitm.com")) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Registration Failed',
-          text: 'Only @lecturer.uitm.com emails are allowed.'
-        });
-        return;
-      }
 
       if (!name || !email || !password) {
         Swal.fire({
@@ -159,16 +143,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+         const lecturerCode = generateLecturerCode();  // ✅ Generate code
+
         await setDoc(doc(db, "lecturers", user.uid), {
           name,
           email,
+          lecturerCode,  // ✅ Store the code
           createdAt: new Date().toISOString()
         });
-
         Swal.fire({
           icon: 'success',
           title: 'Registration Successful',
           text: 'Now you can log in.',
+          text: `Your lecturer code is ${lecturerCode}`,
+
           timer: 2000,
           showConfirmButton: false
         }).then(() => {
@@ -186,3 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function generateLecturerCode(length = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}

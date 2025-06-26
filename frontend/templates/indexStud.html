@@ -11,10 +11,6 @@
 
     <title>Student Dashboard</title>
 
-    
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
-
 
     <!-- Additional CSS Files -->
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
@@ -23,6 +19,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/owl.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
 
   </head>
 
@@ -37,9 +34,10 @@
               <div class="col-12">
                   <nav class="main-nav">
                       <!-- ***** Logo Start ***** -->
-                      <a href="index.html" class="logo">
-                          MIGRADE
-                      </a>
+                      <a href="{{ url_for('student.student_dashboard') }}" class="logo">
+                          <img src="{{ url_for('static', filename='images/AI-logo.png') }}" alt="Logo" style="height: 120px; vertical-align: middle;">
+                        </a>
+
                       <!-- ***** Logo End ***** -->
                       <!-- ***** Menu Start ***** -->
                       <ul class="nav">
@@ -53,7 +51,7 @@
                                 <li><a href="#" data-bs-toggle="modal" data-bs-target="#studentProfileModal">Profile</a></li>
 
 
-                                <li><a href="logout.html">Logout</a></li>
+                                <li><a href="{{ url_for('student.login_student') }}">Logout</a></li>
                               </ul>
                             </span>
                           </li>
@@ -166,44 +164,9 @@
 
  
 
-<section class="our-facts text-center">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <h2 class="mb-5">Assignment Summary</h2>
-        <div class="row">
-          <div class="col-md-6 mb-4">
-            <div class="count-area-content">
-              <div class="count-digit" id="totalCount">--</div>
-              <div class="count-title">Total Assignments</div>
-            </div>
-          </div>
-          <div class="col-md-6 mb-4">
-            <div class="count-area-content">
-              <div class="count-digit" id="notSubmittedCount">--</div>
-              <div class="count-title">Not Submitted</div>
-            </div>
-          </div>
-          <div class="col-md-6 mb-4">
-            <div class="count-area-content">
-              <div class="count-digit" id="submittedCount">--</div>
-              <div class="count-title">Submitted</div>
-            </div>
-          </div>
-          <div class="col-md-6 mb-4">
-            <div class="count-area-content">
-              <div class="count-digit" id="averageGrade">--%</div>
-              <div class="count-title">Average Score</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 
-<!-- Upload Modal -->
+
 <div id="uploadModal" class="modal">
   <div class="upload-box">
     <span onclick="closeUploadModal()" class="cancel-btn" style="top: 10px; right: 15px;">&times;</span>
@@ -219,9 +182,14 @@
       <input type="file" id="fileInput" class="file-selector-input" accept=".pdf,image/*" />
     </div>
 
+    <div class="upload-progress">
+      <div id="uploadProgress" class="progress-bar"></div>
+    </div>
+
     <div id="fileList" class="file-list"></div>
   </div>
 </div>
+
 
 <div class="modal fade" id="studentProfileModal" tabindex="-1" aria-labelledby="studentProfileLabel">
   <div class="modal-dialog modal-dialog-centered">
@@ -237,6 +205,7 @@
         <h5 id="studentName" class="mb-1 fw-bold">Loading...</h5>
         <p id="studentEmail" class="text-muted">Loading...</p>
         <p id="studentID" class="text-muted">Loading...</p>
+         <p id="studentClass" class="text-muted">Loading...</p>
 
       </div>
       <div class="modal-footer justify-content-center">
@@ -252,9 +221,8 @@
 
   <!-- Scripts -->
   <!-- Bootstrap core JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-whatever" crossorigin="anonymous"></script>
-
     <script src="{{ url_for('static', filename='assets/js/isotope.min.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/owl-carousel.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/lightbox.js') }}"></script>
@@ -262,6 +230,9 @@
     <script src="{{ url_for('static', filename='assets/js/video.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/slick-slider.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
 
     <script>
@@ -311,54 +282,53 @@
         });
     </script>
   
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  <script>
   const firebaseConfig = {
     apiKey: "AIzaSyDWO1wHoJUv05yCZIrcK3CWpRcIpkVksvg",
     authDomain: "fyp-ai-3a972.firebaseapp.com",
     projectId: "fyp-ai-3a972",
-    storageBucket: "fyp-ai-3a972.firebasestorage.app",
+    storageBucket: "fyp-ai-3a972.appspot.com",
     messagingSenderId: "1095317736019",
-    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6",
-    measurementId: "G-2Y9J22HNYN"
+    appId: "1:1095317736019:web:1fd2dafaea68314c9d54a6"
   };
 
-  firebase.initializeApp(firebaseConfig); // only if not already initialized
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const q = db.collection('students').where('email', '==', user.email);
-          const snapshot = await q.get();
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const studentRef = doc(db, "students", user.uid);
+        const studentSnap = await getDoc(studentRef);
 
-          if (!snapshot.empty) {
-            const data = snapshot.docs[0].data();
-            document.getElementById('studentName').textContent = data.firstname || "No Name";
-            document.getElementById('studentEmail').textContent = data.email || user.email;
-            document.getElementById('studentID').textContent = data.studentID || "Unknown";
-          } else {
-            document.getElementById('studentName').textContent = "Unknown";
-            document.getElementById('studentEmail').textContent = user.email;
-            document.getElementById('studentID').textContent = "Unknown";
-          }
-        } catch (error) {
-          console.error("Error fetching student profile:", error);
+        if (studentSnap.exists()) {
+          const data = studentSnap.data();
+          document.getElementById('studentName').textContent = data.firstname || "No Name";
+          document.getElementById('studentEmail').textContent = data.email || user.email;
+          document.getElementById('studentID').textContent = "ID: " + (data.studentID || "N/A");
+          document.getElementById('studentClass').textContent = "Class: " + (data.joinedClass?.code || "N/A");
+        } else {
           document.getElementById('studentName').textContent = "Unknown";
           document.getElementById('studentEmail').textContent = user.email;
-          document.getElementById('studentID').textContent = "Unknown";
+          document.getElementById('studentID').textContent = "ID: N/A";
+          document.getElementById('studentClass').textContent = "Class: N/A";
         }
+      } catch (err) {
+        console.error("Error fetching student profile:", err);
       }
-    });
-
+    }
+  });
 </script>
 
 
+
 <script type="module" src="{{ url_for('static', filename='js/studDashboard.js') }}"></script>
+
 
 
 

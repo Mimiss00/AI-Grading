@@ -73,6 +73,19 @@ if (loginForm) {
       if (docSnap.exists()) {
         const studentData = docSnap.data();
 
+        if (!studentData.joinedClass || !studentData.joinedClass.code) {
+        // 🚫 Student hasn't joined a class yet
+        Swal.fire({
+          icon: 'info',
+          title: 'Join a Class First',
+          text: 'Please enter your class code to access the dashboard.',
+          showConfirmButton: true
+        }).then(() => {
+          window.location.href = "/student/join-class";
+        });
+        return;
+}
+
        localStorage.setItem("studentData", JSON.stringify({
         firstname: studentData.firstname,
         studentID: studentData.studentID,
