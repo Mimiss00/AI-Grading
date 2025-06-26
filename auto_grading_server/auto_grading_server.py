@@ -19,6 +19,8 @@ import numpy as np
 import traceback  # ⬅️ Make sure this is at the top of your file
 from openai import OpenAI  # ✅ Required for openai>=1.0.0
 import base64
+import tempfile
+
 
 
 
@@ -250,9 +252,29 @@ def process_submission(submission_doc):
     blob.download_to_filename(local_student_pdf)
     print(f"✅ Downloaded student PDF: {file_name}")
 
-    # OCR process
-    images = convert_from_path(local_student_pdf, dpi=400, poppler_path=POPPLER_PATH)
+    # ==== OCR process (support PDF and image files) ====
     all_text = ""
+    images = []
+
+    if local_student_pdf.lower().endswith(".pdf"):
+        try:
+            images = convert_from_path(local_student_pdf, dpi=400, poppler_path=POPPLER_PATH)
+        except Exception as e:
+            print(f"❌ Failed to process PDF: {e}")
+            return
+    elif local_student_pdf.lower().endswith((".jpg", ".jpeg", ".png")):
+        from PIL import Image
+        try:
+            img = Image.open(local_student_pdf)
+            images = [img]
+        except Exception as e:
+            print(f"❌ Failed to open image: {e}")
+            return
+    else:
+        print(f"❌ Unsupported file format: {local_student_pdf}")
+        return
+
+    # Process all images (1 or more pages)
     for i, page in enumerate(images):
         print(f"🖼️ Processing page {i+1}...")
         processed_img = preprocess_image(page)
@@ -260,6 +282,7 @@ def process_submission(submission_doc):
         ocr_text = run_google_ocr(img_bytes)
         cleaned = clean_cpp_code(ocr_text)
         all_text += f"\n--- Page {i+1} ---\n{cleaned}\n"
+
 
     # Download answer scheme
     parsed_ans = answer_scheme_url.split('/o/')[1].split('?')[0]
