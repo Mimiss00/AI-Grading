@@ -26,7 +26,7 @@ import tempfile
 
 # ========== CONFIGURATION ==========
 # Set your API keys and JSON paths
-openai_api_key = "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"  
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
 # ==== Google Vision API Setup ====
