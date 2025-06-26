@@ -16,25 +16,44 @@ from fpdf import FPDF
 from pdf2image import convert_from_path
 import cv2
 import numpy as np
-import traceback  
-from openai import OpenAI  
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from PyPDF2 import PdfReader, PdfWriter
+import traceback  # ⬅️ Make sure this is at the top of your file
+from openai import OpenAI  # ✅ Required for openai>=1.0.0
+import base64
+import tempfile
+
 
 
 
 # ========== CONFIGURATION ==========
 # Set your API keys and JSON paths
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "fyp-ai-3a972-OCR_API.json"  # Google Vision API
-openai_api_key = "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"  # <-- Put your OpenAI API Key here
+openai_api_key = "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"  
 
-# Initialize Firebase
-cred = credentials.Certificate("fyp-ai-3a972-firebase-adminsdk-fbsvc-7f58918799.json")
-firebase_admin.initialize_app(cred, {'storageBucket': 'fyp-ai-3a972.firebasestorage.app'})
+
+# ==== Google Vision API Setup ====
+vision_base64 = os.getenv("GOOGLE_VISION_JSON_BASE64")
+if not vision_base64:
+    raise ValueError("Missing GOOGLE_VISION_JSON_BASE64 environment variable")
+
+vision_json = base64.b64decode(vision_base64)
+
+# Write decoded JSON to a temp file and set the env path
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as temp_cred:
+    temp_cred.write(vision_json.decode())
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred.name
+
+
+# ==== Firebase Admin SDK Setup ====
+firebase_creds = os.getenv("GOOGLE_CREDS_JSON_BASE64")
+if not firebase_creds:
+    raise ValueError("Missing GOOGLE_CREDS_JSON_BASE64 environment variable")
+
+cred_dict = json.loads(base64.b64decode(firebase_creds))
+cred = credentials.Certificate(cred_dict)
+
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'fyp-ai-3a972.firebasestorage.app'
+})
+
 db = firestore.client()
 bucket = storage.bucket()
 
@@ -94,7 +113,6 @@ def clean_cpp_code(text):
     # Remove common OCR garbage
     text = re.sub(r"·", ".", text)
     text = re.sub(r"CS CamScanner", "", text)
-    text = re.sub(r"GS CamScanner", "", text)
     text = re.sub(r"// No\.", " ", text)
     text = re.sub(r"Date", " ", text)
     text = re.sub(r"No", " ", text)
@@ -134,70 +152,49 @@ def clean_cpp_code(text):
     return '\n'.join(lines)
 
 
+
+
 # ========== GRADING ==========
 def extract_total_marks(answer_scheme):
     mark_values = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', answer_scheme, re.IGNORECASE)
     total = sum(float(m) for m in mark_values)
     return int(round(total)) if total else 10
 
-
-def generate_grading_prompt(answer_scheme: str, student_answer: str, total_marks: int = 10):
-    def is_inline_scheme(text):
-        return any("mark" in line.lower() for line in text.splitlines() if "//" in line or "mark" in line)
-
-    if is_inline_scheme(answer_scheme):
-        system_prompt = (
-            "You are a strict but fair C++ programming lecturer.\n"
-            "Grade the student's code based on the inline-annotated model answer provided.\n"
-            "- The model answer includes inline comments (e.g., '1 mark', '0.5 marks').\n"
-            "- IMPORTANT: First check if the student's code is solving the same problem.\n"
-            "  - If the logic is unrelated (e.g., solving vacation logic instead of commission), award 0/total marks and explain.\n"
-            "- Do not award marks for includes, variable declarations, or correct syntax if the logic is not aligned with the model answer.\n"
-            "- For each student line, provide feedback:\n"
-            "  Line N | student code // Correct (X marks) OR // Incorrect - reason (0 marks)\n"
-            f"- Finish with 'Overall Score: X/{total_marks}' and Final Feedback."
-        )
-    else:
-        system_prompt = (
-            "You are a strict but fair C++ programming lecturer grading C++ submissions.\n"
-            f"Marking Scheme (Total: {total_marks} marks):\n"
-            "- Variable declarations (only if relevant to the problem): 1 mark\n"
-            "- Prompt and input statements (only if relevant): 1 mark\n"
-            "- Correct use of logic solving the same problem: 4 marks\n"
-            "- Output/display statements (only if aligned to the task): 2 marks\n"
-            "- Structure and syntax: 2 marks\n\n"
-            "IMPORTANT:\n"
-            "- First, check if the student is solving the same problem as the model answer.\n"
-            "  - If not, award 0 marks for logic, input/output, and variables.\n"
-            "- Do not give any marks for syntactically correct but irrelevant lines.\n"
-            "- Do not assume the question. Grade strictly based on the task described in the model answer.\n\n"
-            "For each line, use this format:\n"
-            "  Line N | code // Correct (X marks) OR // Incorrect - explanation (0 marks)\n"
-            f"Then conclude with 'Overall Score: X/{total_marks}' and Final Feedback."
-        )
-
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"Model Answer:\n{answer_scheme.strip()}\n\nStudent Submission:\n{student_answer.strip()}\n\nGrade this based on the model answer only. Award 0 if unrelated."}
-    ]
-
-
-
-
-
 def ask_openai_grading(answer_scheme, student_answer):
-    client = OpenAI(api_key=openai_api_key)
+    client = OpenAI(api_key=openai_api_key)  # ✅ New initialization
 
     student_lines = student_answer.strip().split('\n')
     numbered_student_answer = "\n".join([f"{idx+1} | {line}" for idx, line in enumerate(student_lines)])
     total_marks = extract_total_marks(answer_scheme)
 
-    messages = generate_grading_prompt(answer_scheme, numbered_student_answer, total_marks)
-    
-    # ✅ DEBUG: Show which prompt is being sent
-    print("🔍 Prompt sent to OpenAI:")
-    for m in messages:
-        print(f"[{m['role'].upper()}] {m['content']}\n{'-'*60}")
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                f"You are a strict but fair C++ programming lecturer who grades student code submissions.\n"
+                f"Marking Scheme (Total: {total_marks} marks):\n"
+                "- Variable declaration: 1 mark\n"
+                "- Prompt and input statement: 1 mark\n"
+                "- Correct use of if-else or logical flow: 4 marks\n"
+                "- Output/display statement(s): 2 marks\n"
+                "- Overall structure and syntax: 2 marks\n\n"
+                "Instructions:\n"
+                "- Use the model answer (answer scheme) as the reference.\n"
+                "- Do not assume the question — only follow the logic and structure shown in the model answer.\n"
+                "- For each line of the student's code, provide feedback using this format:\n"
+                "  Line N | code // Correct (X marks) OR // Incorrect - explanation (0 marks)\n"
+                f"Finish with 'Overall Score: X/{total_marks}' and Final Feedback."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Model Answer:\n{answer_scheme.strip()}\n\n"
+                f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
+                f"Grade this based on the model answer. Format as instructed. Do not assume task."
+            )
+        }
+    ]
 
     try:
         response = client.chat.completions.create(
@@ -214,28 +211,13 @@ def ask_openai_grading(answer_scheme, student_answer):
 
 
 
-
-
-def extract_first_page(input_pdf_path, output_pdf_path):
-    reader = PdfReader(input_pdf_path)
-    writer = PdfWriter()
-    writer.add_page(reader.pages[0])
-    with open(output_pdf_path, "wb") as f:
-        writer.write(f)
-
-# Merge PDFs
-def merge_pdfs(pdf_paths, output_path):
-    merger = PdfMerger()
-    for path in pdf_paths:
-        merger.append(path)
-    merger.write(output_path)
-    merger.close()
-
-def convert_image_to_pdf(image_path, output_pdf_path):
-    from PIL import Image
-    image = Image.open(image_path).convert("RGB")
-    image.save(output_pdf_path, "PDF", resolution=100.0)
-
+def create_feedback_pdf(text, filename):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    for line in text.split("\n"):
+        pdf.multi_cell(0, 10, line)
+    pdf.output(filename)
 
 # ========== MAIN PROCESS ==========
 def process_submission(submission_doc):
@@ -248,97 +230,108 @@ def process_submission(submission_doc):
         print(f"❌ Missing fileURL or assignmentId for {submission_id}.")
         return
 
+    # Fetch Assignment (for answer scheme)
     assignment_doc = db.collection('assignments').document(assignment_id).get()
     if not assignment_doc.exists:
         print(f"❌ Assignment not found for {assignment_id}")
         return
-
     assignment = assignment_doc.to_dict()
     answer_scheme_url = assignment.get("answerSchemeFileURL")
+
     if not answer_scheme_url:
         print("❌ No answer scheme available.")
         return
 
-    # Download and OCR student PDF
+    # Download student PDF
     parsed_path = file_url.split('/o/')[1].split('?')[0]
     storage_path = urllib.parse.unquote(parsed_path)
-    local_student_pdf = f"/tmp/{submission_id}_{os.path.basename(storage_path)}"
-    bucket.blob(storage_path).download_to_filename(local_student_pdf)
+    file_name = os.path.basename(storage_path)
+    local_student_pdf = f"/tmp/{submission_id}_{file_name}"
 
-    images = convert_from_path(local_student_pdf, dpi=400, poppler_path=POPPLER_PATH)
+    blob = bucket.blob(storage_path)
+    blob.download_to_filename(local_student_pdf)
+    print(f"✅ Downloaded student PDF: {file_name}")
+
+    # ==== OCR process (support PDF and image files) ====
     all_text = ""
+    images = []
+
+    if local_student_pdf.lower().endswith(".pdf"):
+        try:
+            images = convert_from_path(local_student_pdf, dpi=400, poppler_path=POPPLER_PATH)
+        except Exception as e:
+            print(f"❌ Failed to process PDF: {e}")
+            return
+    elif local_student_pdf.lower().endswith((".jpg", ".jpeg", ".png")):
+        from PIL import Image
+        try:
+            img = Image.open(local_student_pdf)
+            images = [img]
+        except Exception as e:
+            print(f"❌ Failed to open image: {e}")
+            return
+    else:
+        print(f"❌ Unsupported file format: {local_student_pdf}")
+        return
+
+    # Process all images (1 or more pages)
     for i, page in enumerate(images):
         print(f"🖼️ Processing page {i+1}...")
-        img_bytes = image_to_bytes(preprocess_image(page))
-        all_text += clean_cpp_code(run_google_ocr(img_bytes)) + "\n"
+        processed_img = preprocess_image(page)
+        img_bytes = image_to_bytes(processed_img)
+        ocr_text = run_google_ocr(img_bytes)
+        cleaned = clean_cpp_code(ocr_text)
+        all_text += f"\n--- Page {i+1} ---\n{cleaned}\n"
+
 
     # Download answer scheme
     parsed_ans = answer_scheme_url.split('/o/')[1].split('?')[0]
     ans_path = urllib.parse.unquote(parsed_ans)
     local_answer_json = "/tmp/answer_scheme.json"
-    bucket.blob(ans_path).download_to_filename(local_answer_json)
+    blob = bucket.blob(ans_path)
+    blob.download_to_filename(local_answer_json)
     with open(local_answer_json, "r", encoding="utf-8") as f:
         answer_scheme = f.read()
 
     # Grading
+    print("🧠 Grading with OpenAI...")
     grading_result = ask_openai_grading(answer_scheme, all_text)
-    print("📄 Grading Result:\n", grading_result)
 
-# After grading_result and submission_id have been defined earlier in your function:
-
-
-
-
-
-    # Generate feedback PDF
+     # Create feedback PDF with unique name
     feedback_pdf_path = f"/tmp/{submission_id}_feedback.pdf"
     if os.path.exists(feedback_pdf_path):
         os.remove(feedback_pdf_path)
     create_feedback_pdf(grading_result, feedback_pdf_path)
 
-    # Try to add student image first
-    student_image_path = f"/path/to/images/{submission_id}.png"  # ← Replace with actual image location
-    student_image_pdf = f"/tmp/{submission_id}_original_submission.pdf"
 
-    if os.path.exists(student_image_path):
-        convert_image_to_pdf(student_image_path, student_image_pdf)
-        pdfs_to_merge = [student_image_pdf, feedback_pdf_path]
-    else:
-        pdfs_to_merge = [feedback_pdf_path]
-
-    # ✅ This must NOT be indented into the `else` block
+    # Merge PDFs
     final_pdf_path = f"/tmp/{submission_id}_grading_final.pdf"
-    merge_pdfs([local_student_pdf, feedback_pdf_path], final_pdf_path)
+    merger = PdfMerger()
+    merger.append(local_student_pdf)
+    merger.append(feedback_pdf_path)
+    merger.write(final_pdf_path)
+    merger.close()
+    print("✅ Merged final grading PDF.")
 
-
-
-
-    # Upload to Firebase Storage
+     # Upload final PDF
     grading_blob = bucket.blob(f'grading_results/{submission_id}_grading_final.pdf')
     grading_blob.upload_from_filename(final_pdf_path)
     grading_blob.make_public()
+    grading_pdf_url = grading_blob.public_url
+    print(f"✅ Uploaded grading PDF: {grading_pdf_url}")
 
-    # Add timestamp to avoid browser caching
-    timestamp = int(time.time())
-    grading_pdf_url = grading_blob.public_url + f"?v={timestamp}"
-    print("✅ Uploaded latest grading PDF to Firebase.")
-    print(f"📄 URL: {grading_pdf_url}")
-    print(f"📦 PDF Size: {os.path.getsize(final_pdf_path)} bytes")
-
-    # Extract score from grading result
-    match = re.findall(r"Overall Score:\s*(\d{1,3})\s*/\s*(\d{1,3})", grading_result)
-    score = f"{match[-1][0]}/{match[-1][1]}" if match else "-"
+    # Extract score
+    all_matches = re.findall(r"Overall Score:\s*(\d{1,3}\s*/\s*\d{1,3})", grading_result, re.IGNORECASE)
+    extracted_mark = all_matches[-1].replace(" ", "") if all_matches else "-"
 
     # Update Firestore
     db.collection('submissions').document(submission_id).update({
         "status": "Graded",
         "gradingFileURL": grading_pdf_url,
-        "grade": score,
+        "grade": extracted_mark,
         "feedback": grading_result
     })
-    print(f"✅ Uploaded and updated Firestore for {submission_id}")
-
-
+    print(f"✅ Updated Firestore for submission {submission_id}")
 
 
 def process_all_pending():
@@ -358,39 +351,6 @@ def process_all_pending():
             process_submission(doc)
         except Exception as e:
             print(f"❌ Error processing {doc.id}: {e}")
-from textwrap import wrap
-
-
-def create_feedback_pdf(text, filename):
-    doc = SimpleDocTemplate(filename, pagesize=letter)
-    styles = getSampleStyleSheet()
-    
-    # Create a custom style with monospaced font
-    monospace_style = ParagraphStyle(
-        'Monospace',
-        parent=styles['Normal'],
-        fontName='Courier',
-        fontSize=12,
-        leading=14,
-        spaceAfter=6
-    )
-    
-    content = []
-    for line in text.split('\n'):
-        # Set color based on correctness
-        if "// Incorrect" in line:
-            color = "red"
-        elif "// Correct" in line:
-            color = "green"
-        else:
-            color = "black"
-            
-        # Create styled paragraph with color
-        styled_text = f'<font color="{color}">{line}</font>'
-        content.append(Paragraph(styled_text, monospace_style))
-    
-    doc.build(content)
-
 
 
 if __name__ == "__main__":

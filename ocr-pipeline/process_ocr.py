@@ -9,20 +9,48 @@ from google.cloud import vision
 import firebase_admin
 from firebase_admin import credentials, storage, firestore
 import urllib.parse
+import json
+import base64
+import tempfile
 
 # ========== CONFIGURATION ==========
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ocr-pipeline/fyp-ai-3a972-OCR_API.json"  # ✅ Vision API key
-POPPLER_PATH = r"C:\poppler\poppler-24.08.0\Library\bin"  # ✅ Your Poppler path
+# ========== POPPLER PATH (Adjust based on environment) ==========
+if os.name == 'nt':
+    # Windows (local)
+    POPPLER_PATH = r"C:\poppler\poppler-24.08.0\Library\bin"
+else:
+    # Linux (e.g. Railway)
+    POPPLER_PATH = "/usr/bin"
 
-FIREBASE_CRED_PATH = "ocr-pipeline/fyp-ai-3a972-firebase-adminsdk-fbsvc-7f58918799.json"  # ✅ Firebase Admin SDK key
+# ========== GOOGLE VISION SETUP ==========
+vision_base64 = os.getenv("GOOGLE_VISION_JSON_BASE64")
+if not vision_base64:
+    raise ValueError("Missing GOOGLE_VISION_JSON_BASE64 environment variable")
+
+vision_json = base64.b64decode(vision_base64)
+
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as temp_cred:
+    temp_cred.write(vision_json.decode())
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred.name  # Required by Google Vision API
+
+vision_client = vision.ImageAnnotatorClient()
+
+# ========== FIREBASE ADMIN SETUP ==========
+firebase_base64 = os.getenv("GOOGLE_CREDS_JSON_BASE64")
+if not firebase_base64:
+    raise ValueError("Missing GOOGLE_CREDS_JSON_BASE64 environment variable")
+
+firebase_json = base64.b64decode(firebase_base64)
+firebase_dict = json.loads(firebase_json)
+cred = credentials.Certificate(firebase_dict)
+
 FIREBASE_BUCKET_NAME = "fyp-ai-3a972.firebasestorage.app"
 
-# ========== INITIALIZE SERVICES ==========
-cred = credentials.Certificate(FIREBASE_CRED_PATH)
 firebase_admin.initialize_app(cred, {
     'storageBucket': FIREBASE_BUCKET_NAME
 })
-vision_client = vision.ImageAnnotatorClient()
+
+bucket = storage.bucket()
 
 # ========== IMAGE PREPROCESSING ==========
 def increase_contrast(img):
