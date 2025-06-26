@@ -24,20 +24,34 @@ import base64
 
 # ========== CONFIGURATION ==========
 # Set your API keys and JSON paths
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "fyp-ai-3a972-OCR_API.json"  # Google Vision API
-openai_api_key = "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"  # <-- Put your OpenAI API Key here
+openai_api_key = "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"  
 
-# Initialize Firebase
+
+# ==== Google Vision API Setup ====
+vision_base64 = os.getenv("GOOGLE_VISION_JSON_BASE64")
+if not vision_base64:
+    raise ValueError("Missing GOOGLE_VISION_JSON_BASE64 environment variable")
+
+vision_json = base64.b64decode(vision_base64)
+
+# Write decoded JSON to a temp file and set the env path
+with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as temp_cred:
+    temp_cred.write(vision_json.decode())
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_cred.name
+
+
+# ==== Firebase Admin SDK Setup ====
 firebase_creds = os.getenv("GOOGLE_CREDS_JSON_BASE64")
 if not firebase_creds:
     raise ValueError("Missing GOOGLE_CREDS_JSON_BASE64 environment variable")
 
-# Decode from base64 → JSON → dict
 cred_dict = json.loads(base64.b64decode(firebase_creds))
-
-# Create credentials object
 cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred, {'storageBucket': 'fyp-ai-3a972.firebasestorage.app'})
+
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'fyp-ai-3a972.firebasestorage.app'
+})
+
 db = firestore.client()
 bucket = storage.bucket()
 
