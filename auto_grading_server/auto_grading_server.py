@@ -1,4 +1,3 @@
-
 import os
 import io
 import json
@@ -20,14 +19,14 @@ import traceback  # ⬅️ Make sure this is at the top of your file
 from openai import OpenAI  # ✅ Required for openai>=1.0.0
 import base64
 import tempfile
+from dotenv import load_dotenv
 
 
 
-
+load_dotenv()
 # ========== CONFIGURATION ==========
 # Set your API keys and JSON paths
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # ==== Google Vision API Setup ====
 vision_base64 = os.getenv("GOOGLE_VISION_JSON_BASE64")

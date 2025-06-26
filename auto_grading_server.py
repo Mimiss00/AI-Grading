@@ -20,7 +20,9 @@ import traceback  # ⬅️ Make sure this is at the top of your file
 from openai import OpenAI  # ✅ Required for openai>=1.0.0
 import base64
 import tempfile
+from dotenv import load_dotenv
 
+load_dotenv()
 
 
 
