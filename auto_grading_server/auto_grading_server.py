@@ -20,6 +20,11 @@ from openai import OpenAI  # ✅ Required for openai>=1.0.0
 import base64
 import tempfile
 from dotenv import load_dotenv
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from textwrap import wrap
+
 
 
 
@@ -210,13 +215,61 @@ def ask_openai_grading(answer_scheme, student_answer):
 
 
 
+
 def create_feedback_pdf(text, filename):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    for line in text.split("\n"):
-        pdf.multi_cell(0, 10, line)
-    pdf.output(filename)
+    c = canvas.Canvas(filename, pagesize=letter)
+    width, height = letter
+    margin = 40
+    usable_width = width - 2 * margin
+    y = height - margin
+
+    c.setFont("Courier", 10)  # Monospaced font for code
+
+    for line in text.split('\n'):
+        # Default to black for regular text
+        c.setFillColor(colors.black)
+        
+        # Check for correct/incorrect markers
+        if "// Correct" in line:
+            # Split the line into code and comment parts
+            parts = line.split("//")
+            if len(parts) >= 2:
+                # Draw code part in green
+                c.setFillColor(colors.green)
+                c.drawString(margin, y, parts[0].strip())
+                x_pos = margin + c.stringWidth(parts[0].strip())
+                
+                # Draw comment part in black
+                c.setFillColor(colors.black)
+                c.drawString(x_pos, y, " //" + "//".join(parts[1:]))
+            else:
+                c.drawString(margin, y, line)
+        elif "// Incorrect" in line:
+            # Split the line into code and comment parts
+            parts = line.split("//")
+            if len(parts) >= 2:
+                # Draw code part in red
+                c.setFillColor(colors.red)
+                c.drawString(margin, y, parts[0].strip())
+                x_pos = margin + c.stringWidth(parts[0].strip())
+                
+                # Draw comment part in black
+                c.setFillColor(colors.black)
+                c.drawString(x_pos, y, " //" + "//".join(parts[1:]))
+            else:
+                c.drawString(margin, y, line)
+        else:
+            # Regular line (no marking)
+            c.drawString(margin, y, line)
+        
+        y -= 14
+        if y < 50:  # Start new page
+            c.showPage()
+            y = height - margin
+            c.setFont("Courier", 10)
+
+    c.save()
+
 
 # ========== MAIN PROCESS ==========
 def process_submission(submission_doc):

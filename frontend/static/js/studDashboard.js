@@ -250,18 +250,44 @@ async function loadAssignments() {
       const submissionId = `${uid}_${assignmentId}`;
       const submissionSnap = await getDoc(doc(db, "submissions", submissionId));
 
-      let uploadButtonHTML = "";
-      if (!submissionSnap.exists()) {
-        uploadButtonHTML = `
-          <button class="action-btn upload-btn" onclick="openUploadModal('${assignmentId}')">
-            <i class="fas fa-upload"></i> Upload Submission
-          </button>
-        `;
-      } else {
-        uploadButtonHTML = `
-          <span class="badge bg-success text-light">✅ Submitted</span>
-        `;
-      }
+     let uploadButtonHTML = "";
+if (!submissionSnap.exists()) {
+  uploadButtonHTML = `
+    <button class="action-btn upload-btn" onclick="openUploadModal('${assignmentId}')">
+      <i class="fas fa-upload"></i> Upload Submission
+    </button>
+  `;
+} else {
+  const submission = submissionSnap.data();
+  const rawStatus = submission?.status || "not submitted";
+  const isReleased = submission?.released === true;
+  const isGraded = rawStatus === "graded" && !!submission?.grade;
+
+  console.log("🔎 Debug Submission:");
+  console.log("rawStatus:", rawStatus);
+  console.log("isReleased:", isReleased);
+  console.log("isGraded:", isGraded);
+  console.log("grade:", submission?.grade);
+  console.log("feedback:", submission?.feedback);
+
+  if (isReleased && isGraded) {
+    uploadButtonHTML = `
+      <div class="graded-block">
+        <span class="badge bg-success text-light">✅ Submitted</span>
+        <div class="grading-info">
+          <p><strong>Grade:</strong> ${submission.grade}</p>
+          <p><strong>Feedback:</strong> ${submission.feedback}</p>
+          ${submission.gradingFileURL ? `<a href="${submission.gradingFileURL}" target="_blank" class="view-assignment-btn">View Marked File</a>` : ''}
+        </div>
+      </div>
+    `;
+  } else {
+    uploadButtonHTML = `
+      <span class="badge bg-success text-light">✅ Submitted (Pending Grading)</span>
+    `;
+  }
+}
+
 
       const assignmentItem = document.createElement('div');
       assignmentItem.classList.add('assignment-item');
@@ -308,8 +334,22 @@ async function loadAssignments() {
   });
 }
 
+async function markAsGraded(studentID, assignmentID, grade, feedback, gradingFileURL = "") {
+  const submissionRef = doc(db, "submissions", `${studentID}_${assignmentID}`);
+  await setDoc(submissionRef, {
+    grade,
+    feedback,
+    released: true,
+    status: "graded",
+    gradingFileURL
+  }, { merge: true });
+
+  alert("✅ Grading saved for " + studentID);
+}
+
 
 // Expose functions to global scope
 window.openUploadModal = openUploadModal;
 window.closeUploadModal = closeUploadModal;
 window.uploadSubmission = uploadSubmission;
+window.markAsGraded = markAsGraded; // <-- tambah ni kalau nak panggil dari button/console

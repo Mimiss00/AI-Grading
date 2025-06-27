@@ -90,6 +90,18 @@ async function loadRecentSubmissions() {
       // Create card with layout similar to your image example
   const card = document.createElement('div');
   card.className = 'col-xl-3 col-lg-3 col-md-6 col-sm-6 mb-4'; // Adjusted for better horizontal layout
+
+let statusBadgeHTML = "";
+
+if (status === "graded" || status === "released") {
+  statusBadgeHTML = `<span class="badge rounded-pill" style="background-color:#28a745 !important; color:#fff !important; font-size:13px; font-weight:600;">Graded</span>`;
+} else if (status === "submitted" || status === "pending") {
+  statusBadgeHTML = `<span class="badge rounded-pill" style="background-color:#fde68a !important; color:#92400e !important; font-size:13px; font-weight:600;">Pending</span>`;
+} else {
+  statusBadgeHTML = `<span class="badge rounded-pill" style="background-color:#fca5a5 !important; color:#991b1b !important; font-size:13px; font-weight:600;">Not Submitted</span>`;
+}
+
+
       
 card.innerHTML = `
   <div class="card flex-fill shadow-sm h-100" style="border-radius: 16px; border: none;">
@@ -121,7 +133,7 @@ card.innerHTML = `
       <div class="d-flex flex-column gap-2">
         <a href="${data.fileURL}" target="_blank" class="btn btn-sm w-100" 
            style="background-color: #165c56; color: white;"
-           onmouseover="this.style.backgroundColor='#0f3f3b'" 
+           onmfouseover="this.style.backgroundColor='#0f3f3b'" 
            onmouseout="this.style.backgroundColor='#165c56'">
           📄 View Submission
         </a>
@@ -182,16 +194,18 @@ async function loadLecturerSubmissions() {
       const status = (data.status || 'submitted').toLowerCase();
       const isReleased = status === 'released';
  
+   const statusBadgeHTML = `<span class="badge status-badge ${status}">${status.toUpperCase()}</span>`;
 
 
     const card = document.createElement('div');
    card.className = `col-md-6 col-lg-4 mb-4 mix ${status}`;
 
+
     card.innerHTML = `
       <div class="submission-card p-4 shadow-sm rounded-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <span class="badge status-badge ${status.toLowerCase()}">${status.toUpperCase()}</span>
-          <button class="btn btn-sm btn-grade ${isReleased ? 'released' : 'editable'}" 
+        ${statusBadgeHTML}
+            <button class="btn btn-sm btn-grade ${isReleased ? 'released' : 'editable'}" 
                   onclick="loadSubmissionDetail('${docSnap.id}', '${status}')">
             ✏️ Grade
           </button>
@@ -252,6 +266,23 @@ async function loadSubmissionDetail(docId, status) {
   container.innerHTML = '<div class="text-center"><div class="spinner-border text-info"></div></div>';
 
   try {
+    // 1. Get current lecturer's data first
+    const user = auth.currentUser;
+    if (!user) {
+      container.innerHTML = '<p class="text-danger">Authentication required.</p>';
+      return;
+    }
+
+    const lecturerDoc = await getDoc(doc(db, 'lecturers', user.uid));
+    if (!lecturerDoc.exists()) {
+      container.innerHTML = '<p class="text-danger">Lecturer profile not found.</p>';
+      return;
+    }
+
+    const lecturerData = lecturerDoc.data();
+    const assignedClasses = lecturerData.assignedClasses || [];
+
+    // 2. Get the submission document
     const docSnap = await getDoc(doc(db, 'submissions', docId));
     if (!docSnap.exists()) {
       container.innerHTML = '<p class="text-danger">Submission not found.</p>';
@@ -259,32 +290,120 @@ async function loadSubmissionDetail(docId, status) {
     }
 
     const data = docSnap.data();
-    const editable = (status.toLowerCase() !== 'released');
+    
+    // 3. Verify the lecturer has access to this submission
+    if (!assignedClasses.includes(data.classCode)) {
+      container.innerHTML = `
+      <div class="alert alert-danger position-relative">
+        <button type="button" 
+                class="btn-close position-absolute top-0 end-0 m-2" 
+                onclick="document.getElementById('submission-detail').innerHTML=''"
+                aria-label="Close"></button>
+        <h5>Access Denied</h5>
+        <p>You don't have permission to view this submission.</p>
+        <p>Class: ${data.classCode || 'Unknown'}</p>
+        <p>Your assigned classes: ${assignedClasses.join(', ') || 'None'}</p>
+      </div>
+    `;
+      return;
+    }
 
+    // 4. Only proceed if access is granted
+    const editable = (data.status?.toLowerCase() !== 'released');
 
     container.innerHTML = `
       <div class="card shadow p-4 mt-4">
-        <h4 class="mb-3 text-primary fw-bold">${data.assignmentTitle || 'Untitled Assignment'}</h4>
-        <p><strong>Student:</strong> ${data.studentName} (${data.studentID})</p>
-        <p><strong>Status:</strong> <span class="badge bg-${editable ? 'warning' : 'success'}">${data.status}</span></p>
-        <p><strong>Grade:</strong></p>
-        ${editable ? `<input type="text" id="edit-grade" class="form-control w-25 mb-3" value="${data.grade || ''}">` : `<p>${data.grade}</p>`}
-        <p><strong>Feedback:</strong></p>
-        ${editable ? `<textarea id="edit-feedback" class="form-control" rows="6">${data.feedback || ''}</textarea>` : `<pre class="bg-light p-3 border">${data.feedback || 'No feedback provided.'}</pre>`}
-        <p class="mt-3"><strong>Submitted File:</strong> <a href="${data.fileURL}" target="_blank">📄 View File</a></p>
-        ${data.gradingFileURL ? `<p><strong>Grading File:</strong> <a href="${data.gradingFileURL}" target="_blank">📝 View Grading</a></p>` : ''}
-        ${editable ? `<button class="btn btn-success mt-4" onclick="saveFeedbackAndGrade('${docId}')">✅ Save & Mark Graded</button>` : ''}
-        <button class="close-btn" onclick="document.getElementById('submission-detail').innerHTML = ''">✖</button>
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h4 class="mb-3 text-primary fw-bold">${data.assignmentTitle || 'Untitled Assignment'}</h4>
+            <p><strong>Class:</strong> ${data.classCode || 'N/A'}</p>
+            <p><strong>Student:</strong> ${data.studentName} (${data.studentID})</p>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('submission-detail').innerHTML = ''">
+            ✖ Close
+          </button>
+        </div>
 
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <p><strong>Status:</strong> <span class="badge bg-${editable ? 'warning' : 'success'}">${data.status}</span></p>
+            <p><strong>Submitted:</strong> ${new Date(data.submittedAt?.toDate()).toLocaleString() || 'N/A'}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Grade:</strong></p>
+            ${editable ? `
+              <div class="input-group mb-3" style="width: 200px;">
+                <input type="text" id="edit-grade" class="form-control" value="${data.grade || ''}">
+                <span class="input-group-text">/100</span>
+              </div>
+            ` : `<h5>${data.grade || 'Not graded'}</h5>`}
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <p><strong>Feedback:</strong></p>
+          ${editable ? `
+            <textarea id="edit-feedback" class="form-control" rows="6" 
+              placeholder="Provide detailed feedback...">${data.feedback || ''}</textarea>
+          ` : `
+            <div class="feedback-display bg-light p-3 border rounded">
+              ${data.feedback ? formatFeedback(data.feedback) : 'No feedback provided.'}
+            </div>
+          `}
+        </div>
+
+        <div class="mt-4">
+          <p><strong>Attachments:</strong></p>
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>📄 Student Submission</span>
+              <a href="${data.fileURL}" target="_blank" class="btn btn-sm btn-outline-primary">
+                View/Download
+              </a>
+            </li>
+            ${data.gradingFileURL ? `
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>📝 Graded File</span>
+                <a href="${data.gradingFileURL}" target="_blank" class="btn btn-sm btn-outline-success">
+                  View/Download
+                </a>
+              </li>
+            ` : ''}
+          </ul>
+        </div>
+
+        ${editable ? `
+          <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-success flex-grow-1" onclick="saveFeedbackAndGrade('${docId}')">
+              <i class="fas fa-save me-2"></i>Save & Mark Graded
+            </button>
+            <button class="btn btn-outline-secondary" onclick="releaseSubmission('${docId}')">
+              <i class="fas fa-paper-plane me-2"></i>Release to Student
+            </button>
+          </div>
+        ` : ''}
       </div>
     `;
 
-    // Auto scroll into view
     container.scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    console.error(err);
-    container.innerHTML = `<p class="text-danger">Failed to load submission detail.</p>`;
+    console.error("Error loading submission:", err);
+    container.innerHTML = `
+      <div class="alert alert-danger">
+        <h5>Error Loading Submission</h5>
+        <p>${err.message}</p>
+      </div>
+    `;
   }
+}
+
+// Helper function to format feedback with color coding
+function formatFeedback(feedback) {
+  return feedback
+    .replace(/Correct/g, '<span class="text-success">✓ Correct</span>')
+    .replace(/Incorrect/g, '<span class="text-danger">✗ Incorrect</span>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
 }
 
 
