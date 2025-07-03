@@ -2296,3 +2296,10 @@ responsive
   }
 }
 
+
+const badgeColor = {
+  graded: 'bg-success',
+  released: 'bg-secondary',
+  pending: 'bg-warning',
+  submitted: 'bg-info',
+}[status] || 'bg-light';

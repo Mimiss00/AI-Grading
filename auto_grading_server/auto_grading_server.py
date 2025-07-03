@@ -5,7 +5,6 @@ import re
 import time
 import urllib.parse
 import requests
-import openai
 import firebase_admin
 import pytz
 from firebase_admin import credentials, firestore, storage
@@ -15,8 +14,8 @@ from fpdf import FPDF
 from pdf2image import convert_from_path
 import cv2
 import numpy as np
-import traceback  # ⬅️ Make sure this is at the top of your file
-from openai import OpenAI  # ✅ Required for openai>=1.0.0
+import traceback 
+from openai import OpenAI  
 import base64
 import tempfile
 from dotenv import load_dotenv
@@ -117,6 +116,7 @@ def clean_cpp_code(text):
     # Remove common OCR garbage
     text = re.sub(r"·", ".", text)
     text = re.sub(r"CS CamScanner", "", text)
+    text = re.sub(r"GS CamScanner", "", text)
     text = re.sub(r"// No\.", " ", text)
     text = re.sub(r"Date", " ", text)
     text = re.sub(r"No", " ", text)
@@ -159,12 +159,17 @@ def clean_cpp_code(text):
 
 
 # ========== GRADING ==========
+def clean_answer_scheme_names(answer_scheme):
+    # Remove lines that mention variable name corrections
+    return re.sub(r'//.*should be.*', '', answer_scheme, flags=re.IGNORECASE)
+
 def extract_total_marks(answer_scheme):
     mark_values = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', answer_scheme, re.IGNORECASE)
     total = sum(float(m) for m in mark_values)
     return int(round(total)) if total else 10
 
 def ask_openai_grading(answer_scheme, student_answer):
+    answer_scheme = clean_answer_scheme_names(answer_scheme)
     client = OpenAI(api_key=openai_api_key)  # ✅ New initialization
 
     student_lines = student_answer.strip().split('\n')
@@ -172,24 +177,20 @@ def ask_openai_grading(answer_scheme, student_answer):
     total_marks = extract_total_marks(answer_scheme)
 
     messages = [
-        {
-            "role": "system",
+                {
+                "role": "system",
             "content": (
-                f"You are a strict but fair C++ programming lecturer who grades student code submissions.\n"
-                f"Marking Scheme (Total: {total_marks} marks):\n"
-                "- Variable declaration: 1 mark\n"
-                "- Prompt and input statement: 1 mark\n"
-                "- Correct use of if-else or logical flow: 4 marks\n"
-                "- Output/display statement(s): 2 marks\n"
-                "- Overall structure and syntax: 2 marks\n\n"
-                "Instructions:\n"
-                "- Use the model answer (answer scheme) as the reference.\n"
-                "- Do not assume the question — only follow the logic and structure shown in the model answer.\n"
-                "- For each line of the student's code, provide feedback using this format:\n"
-                "  Line N | code // Correct (X marks) OR // Incorrect - explanation (0 marks)\n"
-                f"Finish with 'Overall Score: X/{total_marks}' and Final Feedback."
+                "You are a C++ code grader. Follow these rules STRICTLY:\n"
+                "1. GROUP MARKS BY SECTION ONLY (declarations, inputs, computation, output)\n"
+                "2. NEVER mark down for variable name differences (e.g., accept both payrate and PAYRATE)\n"
+                "3. Format exactly like this example:\n"
+                "Line 1 | int x; // Correct\n"
+                "Line 2 | double y // Incorrect - missing semicolon\n"
+                "→ Declarations: 1/2 marks\n\n"
+                "Overall Score: X/Y\n"
+                "Final Feedback: <summary>"
             )
-        },
+            },
         {
             "role": "user",
             "content": (
@@ -202,13 +203,12 @@ def ask_openai_grading(answer_scheme, student_answer):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages,
             temperature=0.0,
         )
         return response.choices[0].message.content
     except Exception as e:
-        import traceback
         traceback.print_exc()
         print("[ERROR] OpenAI call failed:", e)
         return "[ERROR] Grading failed due to OpenAI API error."

@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 
 import {getAuth,signOut, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc,serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -91,7 +91,9 @@ async function loadRecentSubmissions() {
   const card = document.createElement('div');
   card.className = 'col-xl-3 col-lg-3 col-md-6 col-sm-6 mb-4'; // Adjusted for better horizontal layout
 
+// In loadRecentSubmissions(), replace the status check with:
 let statusBadgeHTML = "";
+const status = data.status?.toLowerCase() || 'submitted';
 
 if (status === "graded" || status === "released") {
   statusBadgeHTML = `<span class="badge rounded-pill" style="background-color:#28a745 !important; color:#fff !important; font-size:13px; font-weight:600;">Graded</span>`;
@@ -100,7 +102,6 @@ if (status === "graded" || status === "released") {
 } else {
   statusBadgeHTML = `<span class="badge rounded-pill" style="background-color:#fca5a5 !important; color:#991b1b !important; font-size:13px; font-weight:600;">Not Submitted</span>`;
 }
-
 
       
 card.innerHTML = `
@@ -166,7 +167,7 @@ card.innerHTML = `
 
 /*Student submission*/
 async function loadLecturerSubmissions() {
-      console.log("🔁 Loading lecturer submissions...");
+  console.log("🔁 Loading lecturer submissions...");
 
   const container = document.getElementById('lecturerSubmissionGrid');
   if (!container) return console.error("Container not found");
@@ -174,69 +175,122 @@ async function loadLecturerSubmissions() {
   container.innerHTML = `<div class="col-12 text-center"><div class="spinner-border text-primary"></div></div>`;
 
   try {
-    const q = query(collection(db, 'submissions')); // remove orderBy for now
-        console.log("📡 Querying Firestore for lecturer submissions...");
+    const user = auth.currentUser;
+    if (!user) {
+      container.innerHTML = '<p class="text-muted">Not logged in.</p>';
+      return;
+    }
 
-    const snapshot = await getDocs(q);
-    console.log("Submissions found:", snapshot.size);
+    const lecturerEmail = user.email;
 
-    if (snapshot.empty) {
+        // Step 1: Query assignments by this lecturer
+    const assignmentQuery = query(
+      collection(db, 'assignments'),
+      where('lecturer_email', '==', lecturerEmail)
+    );
+    const assignmentSnapshot = await getDocs(assignmentQuery);
+
+    if (assignmentSnapshot.empty) {
+      container.innerHTML = '<p class="text-muted">No assignments found for your account.</p>';
+      return;
+    }
+
+        const assignmentIds = assignmentSnapshot.docs.map(doc => doc.id);
+
+         let allSubmissionDocs = [];
+
+    for (let i = 0; i < assignmentIds.length; i += 20) {
+      const batchIds = assignmentIds.slice(i, i + 20);
+      const submissionQuery = query(
+        collection(db, 'submissions'),
+        where('assignmentId', 'in', batchIds)
+      );
+      const submissionSnapshot = await getDocs(submissionQuery);
+      allSubmissionDocs.push(...submissionSnapshot.docs);
+    }
+
+    if (allSubmissionDocs.length === 0) {
       container.innerHTML = '<p class="text-muted">No submissions found.</p>';
       return;
     }
 
     container.innerHTML = '';
 
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
-            console.log("📌 Lecturer Submission:", data);
-
-      const status = (data.status || 'submitted').toLowerCase();
-      const isReleased = status === 'released';
- 
-   const statusBadgeHTML = `<span class="badge status-badge ${status}">${status.toUpperCase()}</span>`;
+      for (const docSnap of allSubmissionDocs) {
+        const data = docSnap.data();
+        const status = (data.status || 'submitted').toLowerCase();
+        const isReleased = status === 'released';
+          const isDisabled = status === 'released' ? 'disabled' : '';
 
 
-    const card = document.createElement('div');
-   card.className = `col-md-6 col-lg-4 mb-4 mix ${status}`;
+        const badgeColor = {
+          graded: 'bg-success',
+          released: 'bg-secondary',
+          pending: 'bg-warning',
+          submitted: 'bg-info'
+        }[status] || 'bg-light';
 
 
-    card.innerHTML = `
-      <div class="submission-card p-4 shadow-sm rounded-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-        ${statusBadgeHTML}
-            <button class="btn btn-sm btn-grade ${isReleased ? 'released' : 'editable'}" 
-                  onclick="loadSubmissionDetail('${docSnap.id}', '${status}')">
-            ✏️ Grade
-          </button>
+      const card = document.createElement('div');
+      card.className = `col-md-6 col-lg-4 mb-4 mix ${status}`;
+
+      card.innerHTML = `
+        <div class="submission-card p-4 shadow-sm rounded-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge ${badgeColor}">
+              ${status.toUpperCase()}
+            </span>
+
+            <button class="btn btn-sm ${status === 'graded' ? 'btn-success' : 'btn-outline-secondary'}" 
+                    onclick="loadSubmissionDetail('${docSnap.id}', '${status}')"
+                    ${isDisabled}>
+              ✏️ Edit
+            </button>
+          </div>
+          <h6 class="assignment-title mb-2">${data.assignmentTitle || 'Untitled'}</h6>
+          <p class="text-muted small m-0">
+            ${data.studentName} (${data.studentID})<br>
+            Class: ${data.classCode || 'N/A'}
+          </p>
+          <div class="mt-3 d-grid gap-2">
+            <a href="${data.fileURL}" target="_blank" class="btn btn-sm btn-outline-primary">
+              View Submission
+            </a>
+            ${data.gradingFileURL ? `
+              <a href="${data.gradingFileURL}" target="_blank" class="btn btn-sm btn-outline-success">
+                View Graded
+              </a>
+            ` : ''}
+          </div>
         </div>
-        <h6 class="assignment-title mb-2">${data.assignmentTitle || 'Untitled Assignment'}</h6>
-        <p class="text-muted small m-0">${data.studentName || 'Unknown'} (${data.studentID || '-'})</p>
-        <div class="mt-3 d-grid gap-2">
-          <a href="${data.fileURL || '#'}" target="_blank" class="btn btn-sm btn-view w-100">🔍 View Submission</a>
-          <a href="${data.gradingFileURL || '#'}" target="_blank" class="btn btn-sm btn-view w-100">🔍 View Graded Submission</a>
-        </div>
-      </div>
-    `;
-
+      `;
 
       container.appendChild(card);
-    });
+    }
 
   } catch (err) {
-    console.error(err);
-    container.innerHTML = `<div class="col-12 alert alert-danger">Failed to load AI submissions.</div>`;
+    console.error("Error:", err);
+    container.innerHTML = `
+      <div class="alert alert-danger">
+        Error loading submissions: ${err.message}
+      </div>
+    `;
   }
 }
 
 
-
-
+// Move this INSIDE the DOMContentLoaded event listener:
 window.addEventListener('DOMContentLoaded', () => {
   console.log("✅ DOM fully loaded.");
 
   const recentContainer = document.getElementById('recent-submissions');
   const lecturerContainer = document.getElementById('lecturerSubmissionGrid');
+
+  // Create detail container here
+  const detailContainer = document.createElement('div');
+  detailContainer.id = 'submission-detail';
+  detailContainer.className = 'container my-5';
+  document.querySelector('#lecturerSubmissions .container')?.appendChild(detailContainer);
 
   if (recentContainer) {
     console.log("📦 Found #recent-submissions container");
@@ -247,9 +301,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (lecturerContainer) {
     console.log("📦 Found #lecturerSubmissionGrid container");
-    loadLecturerSubmissions();
-  } else {
-    console.warn("⚠️ #lecturerSubmissionGrid container not found.");
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("✅ User is logged in:", user.email);
+        loadLecturerSubmissions();
+      } else {
+        lecturerContainer.innerHTML = '<p class="text-danger">Please login to view submissions.</p>';
+      }
+    });
   }
 });
 
@@ -266,23 +325,6 @@ async function loadSubmissionDetail(docId, status) {
   container.innerHTML = '<div class="text-center"><div class="spinner-border text-info"></div></div>';
 
   try {
-    // 1. Get current lecturer's data first
-    const user = auth.currentUser;
-    if (!user) {
-      container.innerHTML = '<p class="text-danger">Authentication required.</p>';
-      return;
-    }
-
-    const lecturerDoc = await getDoc(doc(db, 'lecturers', user.uid));
-    if (!lecturerDoc.exists()) {
-      container.innerHTML = '<p class="text-danger">Lecturer profile not found.</p>';
-      return;
-    }
-
-    const lecturerData = lecturerDoc.data();
-    const assignedClasses = lecturerData.assignedClasses || [];
-
-    // 2. Get the submission document
     const docSnap = await getDoc(doc(db, 'submissions', docId));
     if (!docSnap.exists()) {
       container.innerHTML = '<p class="text-danger">Submission not found.</p>';
@@ -290,120 +332,32 @@ async function loadSubmissionDetail(docId, status) {
     }
 
     const data = docSnap.data();
-    
-    // 3. Verify the lecturer has access to this submission
-    if (!assignedClasses.includes(data.classCode)) {
-      container.innerHTML = `
-      <div class="alert alert-danger position-relative">
-        <button type="button" 
-                class="btn-close position-absolute top-0 end-0 m-2" 
-                onclick="document.getElementById('submission-detail').innerHTML=''"
-                aria-label="Close"></button>
-        <h5>Access Denied</h5>
-        <p>You don't have permission to view this submission.</p>
-        <p>Class: ${data.classCode || 'Unknown'}</p>
-        <p>Your assigned classes: ${assignedClasses.join(', ') || 'None'}</p>
-      </div>
-    `;
-      return;
-    }
+    const editable = (status.toLowerCase() !== 'released');
 
-    // 4. Only proceed if access is granted
-    const editable = (data.status?.toLowerCase() !== 'released');
 
     container.innerHTML = `
       <div class="card shadow p-4 mt-4">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <h4 class="mb-3 text-primary fw-bold">${data.assignmentTitle || 'Untitled Assignment'}</h4>
-            <p><strong>Class:</strong> ${data.classCode || 'N/A'}</p>
-            <p><strong>Student:</strong> ${data.studentName} (${data.studentID})</p>
-          </div>
-          <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('submission-detail').innerHTML = ''">
-            ✖ Close
-          </button>
-        </div>
+        <h4 class="mb-3 text-primary fw-bold">${data.assignmentTitle || 'Untitled Assignment'}</h4>
+        <p><strong>Student:</strong> ${data.studentName} (${data.studentID})</p>
+        <p><strong>Status:</strong> <span class="badge bg-${editable ? 'warning' : 'success'}">${data.status}</span></p>
+        <p><strong>Grade:</strong></p>
+        ${editable ? `<input type="text" id="edit-grade" class="form-control w-25 mb-3" value="${data.grade || ''}">` : `<p>${data.grade}</p>`}
+        <p><strong>Feedback:</strong></p>
+        ${editable ? `<textarea id="edit-feedback" class="form-control" rows="6">${data.feedback || ''}</textarea>` : `<pre class="bg-light p-3 border">${data.feedback || 'No feedback provided.'}</pre>`}
+        <p class="mt-3"><strong>Submitted File:</strong> <a href="${data.fileURL}" target="_blank">📄 View File</a></p>
+        ${data.gradingFileURL ? `<p><strong>Grading File:</strong> <a href="${data.gradingFileURL}" target="_blank">📝 View Grading</a></p>` : ''}
+        ${editable ? `<button class="btn btn-success mt-4" onclick="saveFeedbackAndGrade('${docId}')">✅ Save & Mark Graded</button>` : ''}
+        <button class="close-btn" onclick="document.getElementById('submission-detail').innerHTML = ''">✖</button>
 
-        <div class="row mt-3">
-          <div class="col-md-6">
-            <p><strong>Status:</strong> <span class="badge bg-${editable ? 'warning' : 'success'}">${data.status}</span></p>
-            <p><strong>Submitted:</strong> ${new Date(data.submittedAt?.toDate()).toLocaleString() || 'N/A'}</p>
-          </div>
-          <div class="col-md-6">
-            <p><strong>Grade:</strong></p>
-            ${editable ? `
-              <div class="input-group mb-3" style="width: 200px;">
-                <input type="text" id="edit-grade" class="form-control" value="${data.grade || ''}">
-                <span class="input-group-text">/100</span>
-              </div>
-            ` : `<h5>${data.grade || 'Not graded'}</h5>`}
-          </div>
-        </div>
-
-        <div class="mt-3">
-          <p><strong>Feedback:</strong></p>
-          ${editable ? `
-            <textarea id="edit-feedback" class="form-control" rows="6" 
-              placeholder="Provide detailed feedback...">${data.feedback || ''}</textarea>
-          ` : `
-            <div class="feedback-display bg-light p-3 border rounded">
-              ${data.feedback ? formatFeedback(data.feedback) : 'No feedback provided.'}
-            </div>
-          `}
-        </div>
-
-        <div class="mt-4">
-          <p><strong>Attachments:</strong></p>
-          <ul class="list-group">
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <span>📄 Student Submission</span>
-              <a href="${data.fileURL}" target="_blank" class="btn btn-sm btn-outline-primary">
-                View/Download
-              </a>
-            </li>
-            ${data.gradingFileURL ? `
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>📝 Graded File</span>
-                <a href="${data.gradingFileURL}" target="_blank" class="btn btn-sm btn-outline-success">
-                  View/Download
-                </a>
-              </li>
-            ` : ''}
-          </ul>
-        </div>
-
-        ${editable ? `
-          <div class="d-flex gap-2 mt-4">
-            <button class="btn btn-success flex-grow-1" onclick="saveFeedbackAndGrade('${docId}')">
-              <i class="fas fa-save me-2"></i>Save & Mark Graded
-            </button>
-            <button class="btn btn-outline-secondary" onclick="releaseSubmission('${docId}')">
-              <i class="fas fa-paper-plane me-2"></i>Release to Student
-            </button>
-          </div>
-        ` : ''}
       </div>
     `;
 
+    // Auto scroll into view
     container.scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    console.error("Error loading submission:", err);
-    container.innerHTML = `
-      <div class="alert alert-danger">
-        <h5>Error Loading Submission</h5>
-        <p>${err.message}</p>
-      </div>
-    `;
+    console.error(err);
+    container.innerHTML = `<p class="text-danger">Failed to load submission detail.</p>`;
   }
-}
-
-// Helper function to format feedback with color coding
-function formatFeedback(feedback) {
-  return feedback
-    .replace(/Correct/g, '<span class="text-success">✓ Correct</span>')
-    .replace(/Incorrect/g, '<span class="text-danger">✗ Incorrect</span>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
 }
 
 
@@ -411,35 +365,83 @@ async function saveFeedbackAndGrade(docId) {
   const gradeInput = document.getElementById('edit-grade');
   const feedbackInput = document.getElementById('edit-feedback');
 
-  const grade = gradeInput ? gradeInput.value.trim() : '';
-  const feedback = feedbackInput ? feedbackInput.value.trim() : '';
+  const grade = gradeInput.value.trim();
+  const feedback = feedbackInput.value.trim();
 
-  // ✅ Confirmation dialog
-  const confirmSave = confirm("Are you sure you want to save and release the feedback?");
-  if (!confirmSave) return;
+  if (!grade) {
+    alert("Please enter a grade");
+    return;
+  }
+
+  // Single confirmation dialog
+  const confirmRelease = confirm(`Release this grade to students?`);
+  if (!confirmRelease) return;
 
   try {
     await setDoc(doc(db, 'submissions', docId), {
       grade,
       feedback,
-      status: 'released' // ✅ Changed from "graded"
+      status: 'released', // Immediately set to released
+      isReleased: true,   // Flag as released
+      gradedAt: serverTimestamp(),
+      releasedAt: serverTimestamp() // Same timestamp for immediate release
     }, { merge: true });
 
-    alert("✅ Feedback and grade saved and released!");
-
-    // ✅ Refresh the submission list
-    loadLecturerSubmissions();
-
-    // ✅ Clear the detail panel
-    const container = document.getElementById('submission-detail');
-    if (container) container.innerHTML = '';
+    alert("✅ Grades released to students!");
+    loadLecturerSubmissions(); // Refresh the view
+    document.getElementById('submission-detail').innerHTML = ''; // Close panel
 
   } catch (error) {
-    console.error("❌ Failed to save:", error);
-    alert("❌ Failed to save feedback and grade.");
+    console.error("Release failed:", error);
+    alert("❌ Failed to release grades");
   }
 }
 
+async function releaseGradesToStudents(submissionId) {
+  try {
+    // First verify the submission exists and is graded
+    const docRef = doc(db, 'submissions', submissionId);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error("Submission not found");
+    }
+    
+    if (docSnap.data().status !== 'graded') {
+      throw new Error("Submission must be graded before release");
+    }
+
+    // Confirmation with important info
+    const confirmRelease = confirm(`Release this graded submission to student?\n\nGrade: ${docSnap.data().grade}\n\nThis action cannot be undone.`);
+    if (!confirmRelease) return;
+
+    // Perform release
+    await setDoc(docRef, {
+      status: 'released',
+      isReleased: true,
+      releasedAt: serverTimestamp()
+    }, { merge: true });
+
+    // UI Feedback
+    alert("🎉 Grades successfully released to student!");
+    loadLecturerSubmissions();
+
+  } catch (error) {
+    console.error("Release failed:", error);
+    alert(`❌ Release failed: ${error.message}`);
+  }
+}
+
+// Add to your lecturer UI (e.g., in a submission detail view):
+function renderReleaseButton(submissionId, isReleased) {
+  return `
+    <button onclick="releaseGradesToStudents('${submissionId}')" 
+            ${isReleased ? 'disabled' : ''}
+            style="${isReleased ? 'opacity:0.5; cursor:not-allowed;' : ''}">
+      ${isReleased ? '✓ Released' : 'Release to Student'}
+    </button>
+  `;
+}
 
 
 
@@ -504,5 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (nameElement) nameElement.textContent = "Error loading name";
     }
   }
+
 });
+
 

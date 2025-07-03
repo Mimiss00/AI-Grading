@@ -150,14 +150,15 @@ const studentID = studentData.studentID;
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         await setDoc(doc(db, "submissions", `${studentID}_${currentAssignmentId}`), {
-          studentID,
+        studentID,
           assignmentID: currentAssignmentId,
+          assignmentTitle: assignmentData.title, // Store title with submission
           fileURL: downloadURL,
-          submittedAt: new Date().toISOString(),
+          submittedAt: serverTimestamp(),
           status: "submitted",
-          grade: ""
+          grade: "",
+          classCode: assignmentData.classCode // Also store class code for filtering
         });
-
         alert("Submission uploaded successfully!");
         closeUploadModal();
         loadAssignments(); // Refresh assignments list
@@ -233,91 +234,103 @@ async function loadAssignments() {
 
   for (const assignmentDoc of assignmentsSnapshot.docs) {
     const data = assignmentDoc.data();
-    const dueDate = new Date(data.dueDate);
+    const assignmentId = assignmentDoc.id;
+    
+    // SAFELY HANDLE DUE DATE
+    let dueDate;
+    try {
+      // Check if dueDate exists and is a Firestore Timestamp
+      if (data.dueDate && typeof data.dueDate.toDate === 'function') {
+        dueDate = data.dueDate.toDate();
+      } else if (data.dueDate?.seconds) {
+        // Alternative format (if stored as {seconds, nanoseconds})
+        dueDate = new Date(data.dueDate.seconds * 1000);
+      } else if (data.dueDate) {
+        // If it's already a Date object or string
+        dueDate = new Date(data.dueDate);
+      }
+    } catch (e) {
+      console.error("Error parsing due date:", e);
+      continue; // Skip this assignment if date is invalid
+    }
 
+    if (!dueDate || isNaN(dueDate.getTime())) {
+      console.warn(`Invalid due date for assignment ${assignmentId}`, data.dueDate);
+      continue;
+    }
+
+    // Only show upcoming assignments
     if (dueDate >= today) {
       hasAssignments = true;
-      const assignmentId = assignmentDoc.id;
-      const title = data.title || "Untitled";
+      const title = data.title || `Assignment #${assignmentId.slice(0,4)}`; 
       const description = data.description || "No description available.";
       const fileURL = data.assignmentFileURL || "#";
       const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
       const formattedDate = dueDate.toLocaleDateString("en-US", {
-        year: "numeric", month: "short", day: "numeric"
+        year: "numeric", 
+        month: "short", 
+        day: "numeric"
       });
 
-      // 🔍 Check submission
+      // Rest of your code remains the same...
       const submissionId = `${uid}_${assignmentId}`;
       const submissionSnap = await getDoc(doc(db, "submissions", submissionId));
 
-     let uploadButtonHTML = "";
-if (!submissionSnap.exists()) {
-  uploadButtonHTML = `
-    <button class="action-btn upload-btn" onclick="openUploadModal('${assignmentId}')">
-      <i class="fas fa-upload"></i> Upload Submission
-    </button>
-  `;
-} else {
-  const submission = submissionSnap.data();
-  const rawStatus = submission?.status || "not submitted";
-  const isReleased = submission?.released === true;
-  const isGraded = rawStatus === "graded" && !!submission?.grade;
+      let uploadButtonHTML = "";
+      if (!submissionSnap.exists()) {
+        uploadButtonHTML = `
+          <button class="action-btn upload-btn" onclick="openUploadModal('${assignmentId}')">
+            <i class="fas fa-upload"></i> Upload Submission
+          </button>
+        `;
 
-  console.log("🔎 Debug Submission:");
-  console.log("rawStatus:", rawStatus);
-  console.log("isReleased:", isReleased);
-  console.log("isGraded:", isGraded);
-  console.log("grade:", submission?.grade);
-  console.log("feedback:", submission?.feedback);
+      } else {
+        const submission = submissionSnap.data();
+        const rawStatus = submission?.status || "not submitted";
+        const isReleased = submission?.released === true;
+        const isGraded = rawStatus === "graded" && !!submission?.grade;
 
-  if (isReleased && isGraded) {
-    uploadButtonHTML = `
-      <div class="graded-block">
-        <span class="badge bg-success text-light">✅ Submitted</span>
-        <div class="grading-info">
-          <p><strong>Grade:</strong> ${submission.grade}</p>
-          <p><strong>Feedback:</strong> ${submission.feedback}</p>
-          ${submission.gradingFileURL ? `<a href="${submission.gradingFileURL}" target="_blank" class="view-assignment-btn">View Marked File</a>` : ''}
-        </div>
-      </div>
-    `;
-  } else {
-    uploadButtonHTML = `
-      <span class="badge bg-success text-light">✅ Submitted (Pending Grading)</span>
-    `;
-  }
-}
-
-
-      const assignmentItem = document.createElement('div');
-      assignmentItem.classList.add('assignment-item');
-      assignmentItem.id = `assignment-${assignmentId}`;
-
-      assignmentItem.innerHTML = `
-        <div class="assignment-header">
-          <div class="assignment-info">
-            <h4>${title}</h4>
-            <div class="due-date">
-              <span>Due: ${formattedDate}</span>
-              <span class="days-left">${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left</span>
+        if (isReleased && isGraded) {
+          uploadButtonHTML = `
+            <div class="graded-block">
+              <span class="badge bg-success text-light">✅ Submitted</span>
+              <div class="grading-info">
+                <p><strong>Grade:</strong> ${submission.grade}</p>
+                <p><strong>Feedback:</strong> ${submission.feedback}</p>
+                ${submission.gradingFileURL ? `<a href="${submission.gradingFileURL}" target="_blank" class="view-assignment-btn">View Marked File</a>` : ''}
+              </div>
             </div>
-          </div>
-          <button class="toggle-btn"><i class="fas fa-chevron-down"></i></button>
-        </div>
-        <div class="assignment-details">
-          <p>Desc: ${description}</p>
-          <a href="${fileURL}" target="_blank" class="view-assignment-btn">View Assignment</a>
-          ${uploadButtonHTML}
-        </div>
-      `;
+          `;
+        } else {
+          uploadButtonHTML = `
+            <span class="badge bg-success text-light">✅ Submitted </span>
+          `;
+        }
+      }
 
-      accordionDiv.appendChild(assignmentItem);
+      // Create assignment HTML (make sure to add this part)
+const assignmentHTML = `
+  <div class="assignment-card shadow-sm">
+    <div class="assignment-header">
+      <h5 class="assignment-title">${title}</h5>
+      <small class="assignment-due">📅 Due: ${formattedDate} <span class="due-label">(${daysLeft} days left)</span></small>
+    </div>
+    <p class="assignment-description">${description}</p>
+    <div class="assignment-actions">
+      ${fileURL ? `<a href="${fileURL}" target="_blank" class="btn-view">📄 View Assignment</a>` : ''}
+      ${uploadButtonHTML}
+    </div>
+  </div>
+`;
+
+      accordionDiv.innerHTML += assignmentHTML;
     }
   }
 
   if (!hasAssignments) {
     accordionDiv.innerHTML = "<p style='text-align: center; color: #666;'>No upcoming assignments found.</p>";
   }
+}
 
   // Accordion toggle functionality
   const items = document.querySelectorAll('.assignment-item');
@@ -332,7 +345,7 @@ if (!submissionSnap.exists()) {
       item.classList.toggle('active');
     });
   });
-}
+
 
 async function markAsGraded(studentID, assignmentID, grade, feedback, gradingFileURL = "") {
   const submissionRef = doc(db, "submissions", `${studentID}_${assignmentID}`);
@@ -352,4 +365,4 @@ async function markAsGraded(studentID, assignmentID, grade, feedback, gradingFil
 window.openUploadModal = openUploadModal;
 window.closeUploadModal = closeUploadModal;
 window.uploadSubmission = uploadSubmission;
-window.markAsGraded = markAsGraded; // <-- tambah ni kalau nak panggil dari button/console
+window.markAsGraded = markAsGraded; 

@@ -398,6 +398,14 @@
         return;
       }
 
+        // Check if answer scheme file is JSON
+        const answerSchemeFileName = answerSchemeFile.name.toLowerCase();
+        if (!answerSchemeFileName.endsWith('.json')) {
+          alert("❌ Answer scheme must be a JSON file (.json)");
+          return;
+        }
+
+
       try {
         uploadBtn.disabled = true;
         uploadBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Uploading...`;

@@ -17,37 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/lightbox.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
-    <style>
-        /* Additional custom styles */
-        .feedback-line {
-            margin-bottom: 10px;
-            padding: 8px;
-            background-color: #f8fafc;
-            border-radius: 4px;
-        }
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            margin-bottom: 8px;
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .file-progress {
-            flex-grow: 1;
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            margin: 0 10px;
-        }
-        .file-progress span {
-            display: block;
-            height: 100%;
-            border-radius: 3px;
-            background: #3b82f6;
-        }
-    </style>
+
 </head>
 <body>
 
@@ -185,7 +155,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 
@@ -213,10 +183,25 @@
       return "not-submitted";
     }
 
+    
+
     // Feedback modal function
 function showFeedback(feedback, score = "", gradingFileURL = "") {
+   const modal = document.getElementById("feedbackModal");
   const modalContent = document.getElementById("modalContent");
+  const closeBtn = document.getElementById("closeModal");
   
+  if (!modal || !modalContent || !closeBtn) {
+    console.error("Required elements not found in DOM");
+    console.log("Available elements:", {
+      modal: !!modal,
+      content: !!modalContent,
+      closeBtn: !!closeBtn
+    });
+    return;
+  }
+  
+
   try {
     feedback = decodeURIComponent(feedback);
   } catch (e) {
@@ -229,19 +214,22 @@ function showFeedback(feedback, score = "", gradingFileURL = "") {
     return;
   }
 
-  // Process line-by-line feedback
   let feedbackHTML = '';
   const lines = feedback.split('\n').filter(line => line.trim());
   
   lines.forEach(line => {
-    // Extract line number, code, and feedback
-    const lineMatch = line.match(/^(\d+)\s*\|\s*(.*?)\s*\/\/\s*(.*)/);
+    // Updated regex to match "Line X | ..." format
+    const lineMatch = line.match(/^Line\s+(\d+)\s*\|\s*(.*?)\s*\/\/\s*(.*)/);
+    
     if (lineMatch) {
       const [, lineNum, code, feedbackText] = lineMatch;
-      const isCorrect = feedbackText.includes("Correct");
-      const isIncorrect = feedbackText.includes("Incorrect");
+      const normalizedFeedback = feedbackText.toLowerCase().trim();
+      const isIncorrect = normalizedFeedback.includes("incorrect");
+      const isCorrect = !isIncorrect && normalizedFeedback.includes("correct");
       const markMatch = feedbackText.match(/\((\d+) mark/);
       
+      console.log(`Line ${lineNum}:`, { code, feedbackText, isCorrect, isIncorrect });
+
       feedbackHTML += `
         <div class="feedback-line" style="
           margin: 8px 0;
@@ -259,7 +247,7 @@ function showFeedback(feedback, score = "", gradingFileURL = "") {
           ">${lineNum}</div>
           <div style="flex-grow: 1;">
             <div style="
-              font-family: monospace;
+              font-family: Courier New;
               color: ${isCorrect ? '#065f46' : isIncorrect ? '#991b1b' : '#334155'};
               margin-bottom: 4px;
             ">${code}</div>
@@ -274,7 +262,6 @@ function showFeedback(feedback, score = "", gradingFileURL = "") {
         </div>
       `;
     } else if (line.trim()) {
-      // Handle non-code feedback lines
       feedbackHTML += `<p style="margin:8px 0; color:#334155;">${line}</p>`;
     }
   });
@@ -316,10 +303,7 @@ function showFeedback(feedback, score = "", gradingFileURL = "") {
 // Make available globally
 window.showFeedback = showFeedback;
 
-// Make available globally
-window.showFeedback = showFeedback;
-// Make available globally
-window.showFeedback = showFeedback;
+
 
     // Upload modal functions
     function openUploadModal(assignmentId) {
@@ -334,187 +318,199 @@ window.showFeedback = showFeedback;
     }
 
     // Main function to load assignments
-    async function loadAssignments() {
-      const user = auth.currentUser;
-      if (!user) return;
+// Main function to load assignments
+async function loadAssignments() {
+    const user = auth.currentUser;
+    if (!user) return;
 
-      try {
+    try {
         const userDoc = await getDoc(doc(db, "students", user.uid));
         if (!userDoc.exists()) {
-          console.error("User data not found");
-          return;
+            console.error("User data not found");
+            return;
         }
 
         const studentData = userDoc.data();
         const studentClassCode = studentData.joinedClass?.code;
         if (!studentClassCode) {
-          console.warn("No class code found");
-          return;
+            console.warn("No class code found");
+            return;
         }
 
-        document.getElementById('studentName').textContent = studentData.firstname || "No Name";
-        document.getElementById('studentEmail').textContent = studentData.email || user.email;
-        document.getElementById('studentID').textContent = "ID: " + (studentData.studentID || "N/A");
-
-        const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+        const assignmentsQuery = query(
+            collection(db, "assignments"),
+            where("classCode", "==", studentClassCode)
+        );
+        const assignmentsSnapshot = await getDocs(assignmentsQuery);
+        
+        const submissionsQuery = query(
+            collection(db, "submissions"),
+            where("studentID", "==", studentData.studentID)
+        );
+        const submissionsSnapshot = await getDocs(submissionsQuery);
+        
         const submissionsMap = {};
-        submissionsSnapshot.forEach((doc) => {
-          const sub = doc.data();
-          if (sub.studentID === studentData.studentID) {
-            submissionsMap[sub.assignmentId] = sub;
-          }
+        submissionsSnapshot.forEach(doc => {
+            submissionsMap[doc.data().assignmentId] = doc.data();
         });
 
-        const assignmentsSnapshot = await getDocs(collection(db, "assignments"));
         assignmentGrid.innerHTML = "";
 
         assignmentsSnapshot.forEach((doc) => {
-          const assignment = doc.data();
-          if (assignment.classCode?.trim() !== studentClassCode?.trim()) return;
-
-          const assignmentId = doc.id;
-          const submission = submissionsMap[assignmentId];
-          
-          const rawStatus = (submission?.status || "not submitted").toString().toLowerCase().trim();
-          const hasGrade = !!submission?.grade;
-          const isGraded = (rawStatus === "released" || rawStatus === "graded") && hasGrade;
-
-          let status = "Not Submitted";
-          if (rawStatus === "submitted" || rawStatus === "pending") {
-            status = "Pending";
-          } else if (isGraded) {
-            status = "Graded";
-          }
-
-          const statusClass = getStatusClass(status);
-          const dueDate = assignment.dueDate || "No due date";
-          const today = new Date();
-          const due = new Date(assignment.dueDate);
-          const timeDiff = due - today;
-          const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-          let daysLeftText = '';
-          if (daysLeft > 0) {
-            daysLeftText = `${daysLeft} day(s) left`;
-          } else if (daysLeft === 0) {
-            daysLeftText = 'Due Today';
-          } else {
-            daysLeftText = 'Overdue';
-          }
-
-          let submissionBlock = "";
-          if (isGraded) {
-            const feedbackRaw = submission.feedback || "";
-            const encodedFeedback = encodeURIComponent(feedbackRaw);
+            const assignment = doc.data();
+            const assignmentId = doc.id;
+            const submission = submissionsMap[assignmentId];
             
-            submissionBlock = `
+            const rawStatus = (submission?.status || "not submitted").toString().toLowerCase().trim();
+            const hasGrade = !!submission?.grade;
+            // NEW: Check if submission is graded AND released
+            const isGraded = hasGrade && ["graded", "released"].includes(rawStatus);
+            const isReleased = submission?.isReleased === true;
+            const isGradedAndReleased = isGraded && isReleased;
+            const isPendingGrading = (["submitted", "pending", "graded"].includes(rawStatus)) && !isGradedAndReleased;
+
+
+            let status = "Not Submitted";
+            if (isPendingGrading) {
+                status = "Pending";
+            } else if (isGradedAndReleased) {
+                status = "Graded"; // This means graded AND released
+            }
+
+            const statusClass = getStatusClass(status);
+            const dueDate = assignment.dueDate || "No due date";
+            const today = new Date();
+            const due = new Date(assignment.dueDate);
+            const timeDiff = due - today;
+            const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            let daysLeftText = '';
+            if (daysLeft > 0) {
+                daysLeftText = `${daysLeft} day(s) left`;
+            } else if (daysLeft === 0) {
+                daysLeftText = 'Due Today';
+            } else {
+                daysLeftText = 'Overdue';
+            }
+
+            let submissionBlock = "";
+  // Update the graded section to:
+      if (isGradedAndReleased) {
+          const feedbackRaw = submission.feedback || "";
+          const encodedFeedback = encodeURIComponent(feedbackRaw);
+          
+          submissionBlock = `
               <div style="margin-top: 10px;">
-                <span style="display:inline-block; background:#f0fdf4; color:#166534; 
-                             padding:4px 10px; border-radius:6px; font-size:14px;">
-                  ✅ Graded: ${submission.grade}
-                </span>
-                <button onclick="window.showFeedback('${encodedFeedback}', '${submission.grade}', '${submission.gradingFileURL || ''}')"
-                        style="margin-top:8px; background:#e0f2fe; border:none; 
-                               color:#0369a1; padding:6px 12px; border-radius:6px; 
-                               cursor:pointer; font-size:14px;">
-                  📝 View Feedback
-                </button>
-                ${submission.gradingFileURL ? `
-                  <a href="${submission.gradingFileURL}" target="_blank" 
-                     style="display:block; margin-top:8px; color:#0f766e; font-size:14px;">
-                    📎 Download Graded File
-                  </a>
-                ` : ''}
-              </div>
-            `;
-          } else if (submission?.status?.toLowerCase() === "submitted" || submission?.status?.toLowerCase() === "pending") {
-            submissionBlock = `
-              <div style="margin-top: 10px;">
-                ${submission.fileURL ? `
-                  <a href="${submission.fileURL}" target="_blank" 
-                     style="color:#047857; display:inline-block; padding:6px 12px; 
-                            background:#ecfdf5; border-radius:6px; font-size:14px;">
-                    🔍 View Submission
-                  </a>
-                ` : '<span style="color:#6b7280;">No submission file</span>'}
-              </div>
-            `;
-          } else {
-            submissionBlock = `
-              <div style="margin-top: 10px;">
-                <button onclick="window.openUploadModal('${assignmentId}')" 
-                  style="background:#2563eb; color:#fff; border:none; padding:6px 14px; 
-                         border-radius:6px; font-size:14px; cursor:pointer;">
-                  ⬆️ Upload Submission
-                </button>
-              </div>
-            `;
-          }
-
-          const card = `
-            <div class="col-lg-4 templatemo-item-col all ${statusClass}">
-              <div class="meeting-item" style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-                <div style="background-color:${status === "Graded" ? "#a7f3d0" : 
-                                           status === "Pending" ? "#fde68a" : 
-                                           status === "Not Submitted" ? "#fca5a5" : "#e2e8f0"};
-                     color:${status === "Graded" ? "#065f46" : 
-                            status === "Pending" ? "#92400e" : 
-                            status === "Not Submitted" ? "#991b1b" : "#334155"};
-                     border-radius:6px; padding:4px 10px; font-size:13px; 
-                     font-weight:600; display:inline-block; margin-bottom:10px;">
-                  ${status}
-                </div>
-
-                <div>
-                  <p style="font-size:14px; font-weight:600; color:#0f172a; margin:5px 0;">
-                    📅 Due: ${dueDate}
-                  </p>
-                  <p style="font-size:13px; color:${daysLeft < 0 ? '#dc2626' : daysLeft === 0 ? '#d97706' : '#059669'}; margin:5px 0;">
-                    ${daysLeftText}
-                  </p>
-
-                  <h5 style="font-size:16px; font-weight:700; color:#1e293b; margin:10px 0 5px;">
-                    ${assignment.title || "Untitled Assignment"}
-                  </h5>
-
-                  <p style="font-size:13px; color:#475569; margin-bottom:10px;">
-                    ${assignment.description || 'No description provided'}
-                  </p>
-
-                  ${assignment.assignmentFileURL ? `
-                    <a href="${assignment.assignmentFileURL}" target="_blank" 
-                       style="color:#2563eb; font-size:14px; display:inline-block; margin-bottom:10px;">
-                      📄 View Assignment
-                    </a>
+                  <span style="display:inline-block; background:#f0fdf4; color:#166534; 
+                              padding:4px 10px; border-radius:6px; font-size:14px;">
+                      ✅ Graded: ${submission.grade}
+                  </span>
+                  <button onclick="window.showFeedback('${encodedFeedback}', '${submission.grade}', '${isReleased ? (submission.gradingFileURL || '') : ''}')"
+                          style="margin-top:8px; background:#e0f2fe; border:none; 
+                                  color:#0369a1; padding:6px 12px; border-radius:6px; 
+                                  cursor:pointer; font-size:14px;">
+                      📝 View Feedback
+                  </button>
+                  ${isReleased && submission.gradingFileURL ? `
+                      <a href="${submission.gradingFileURL}" target="_blank" 
+                          style="display:block; margin-top:8px; color:#0f766e; font-size:14px;">
+                          📎 Download Graded File
+                      </a>
                   ` : ''}
-
-                  ${submissionBlock}
-                </div>
               </div>
-            </div>
           `;
+      } else if (isGraded) {
+          submissionBlock = `
+              <div style="margin-top: 10px;">
+                  <span style="display:inline-block; background:#fffbe0; color:#b45309; 
+                              padding:4px 10px; border-radius:6px; font-size:14px;">
+                      ⏳ Graded - Not Released Yet
+                  </span>
+                  ${submission.fileURL ? `
+                      <a href="${submission.fileURL}" target="_blank" 
+                          style="color:#047857; display:inline-block; padding:6px 12px; 
+                                  background:#ecfdf5; border-radius:6px; font-size:14px; margin-top: 8px;">
+                          🔍 View Your Submission
+                      </a>
+                  ` : ''}
+              </div>
+          `;
+      } else { // Not submitted
+                submissionBlock = `
+                    <div style="margin-top: 10px;">
+                        <button onclick="window.openUploadModal('${assignmentId}')" 
+                            style="background:#2563eb; color:#fff; border:none; padding:6px 14px; 
+                                    border-radius:6px; font-size:14px; cursor:pointer;">
+                            ⬆️ Upload Submission
+                        </button>
+                    </div>
+                `;
+            }
 
-          assignmentGrid.innerHTML += card;
+            const card = `
+                <div class="col-lg-4 templatemo-item-col all ${statusClass}">
+                    <div class="meeting-item" style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                        <div style="background-color:${status === "Graded" ? "#a7f3d0" : 
+                                                    status === "Pending" ? "#fde68a" : 
+                                                    status === "Not Submitted" ? "#fca5a5" : "#e2e8f0"};
+                                    color:${status === "Graded" ? "#065f46" : 
+                                            status === "Pending" ? "#92400e" : 
+                                            status === "Not Submitted" ? "#991b1b" : "#334155"};
+                                    border-radius:6px; padding:4px 10px; font-size:13px; 
+                                    font-weight:600; display:inline-block; margin-bottom:10px;">
+                            ${status}
+                        </div>
+
+                        <div>
+                            <p style="font-size:14px; font-weight:600; color:#0f172a; margin:5px 0;">
+                                📅 Due: ${dueDate}
+                            </p>
+                            <p style="font-size:13px; color:${daysLeft < 0 ? '#dc2626' : daysLeft === 0 ? '#d97706' : '#059669'}; margin:5px 0;">
+                                ${daysLeftText}
+                            </p>
+
+                            <h5 style="font-size:16px; font-weight:700; color:#1e293b; margin:10px 0 5px;">
+                                ${assignment.title || "Untitled Assignment"}
+                            </h5>
+
+                            <p style="font-size:13px; color:#475569; margin-bottom:10px;">
+                                ${assignment.description || 'No description provided'}
+                            </p>
+
+                            ${assignment.assignmentFileURL ? `
+                                <a href="${assignment.assignmentFileURL}" target="_blank" 
+                                    style="color:#2563eb; font-size:14px; display:inline-block; margin-bottom:10px;">
+                                    📄 View Assignment
+                                </a>
+                            ` : ''}
+
+                            ${submissionBlock}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            assignmentGrid.innerHTML += card;
         });
 
         const iso = new Isotope('.grid', {
-          itemSelector: '.templatemo-item-col',
-          layoutMode: 'fitRows'
+            itemSelector: '.templatemo-item-col',
+            layoutMode: 'fitRows'
         });
 
         document.querySelectorAll('.filters li').forEach(btn => {
-          btn.addEventListener('click', function() {
-            document.querySelectorAll('.filters li').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const filterValue = this.getAttribute('data-filter');
-            iso.arrange({ filter: filterValue });
-          });
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filters li').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const filterValue = this.getAttribute('data-filter');
+                iso.arrange({ filter: filterValue });
+            });
         });
 
-      } catch (error) {
+    } catch (error) {
         console.error("Error loading assignments:", error);
-      }
     }
+}
 
     // File upload handling
     document.addEventListener("DOMContentLoaded", function() {
@@ -557,7 +553,7 @@ window.showFeedback = showFeedback;
         handleFiles({ target: { files } });
       });
 
-      async function handleFiles(e) {
+        async function handleFiles(e) {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -566,85 +562,141 @@ window.showFeedback = showFeedback;
           return;
         }
 
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.innerHTML = `
-          <span>${file.name}</span>
-          <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-          <div class="file-progress"><span style="width:0%"></span></div>
-          <span class="cancel-btn" style="cursor:pointer;">&times;</span>
-        `;
-        document.getElementById("fileList").appendChild(fileItem);
+        await handleFileUpload(file);
+      }
 
-        const progressBar = fileItem.querySelector('.file-progress span');
-        const cancelBtn = fileItem.querySelector('.cancel-btn');
+  
+const handleFileUpload = async (file) => {
+  // Create UI element
+  const fileItem = document.createElement('div');
+  fileItem.className = 'file-item';
+  fileItem.innerHTML = `
+    <div class="file-info">
+      <div class="file-name">${file.name}</div>
+      <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+      <div class="progress-text">0%</div>
+    </div>
+    <button class="cancel-btn">×</button>
+  `;
+  document.getElementById('fileList').appendChild(fileItem);
 
-        const storageRef = ref(storage, `submissions/${auth.currentUser.uid}/${currentAssignmentId}/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+  // Get references to elements
+  const progressBar = fileItem.querySelector('.progress-bar');
+  const progressText = fileItem.querySelector('.progress-text');
+  const cancelBtn = fileItem.querySelector('.cancel-btn');
 
-        cancelBtn.onclick = () => {
-          uploadTask.cancel();
-          fileItem.remove();
-        };
+ try {
+      // Create storage reference
+      const storageRef = ref(storage, `submissions/${auth.currentUser.uid}/${currentAssignmentId}/${file.name}`);
+      
+      // Start upload
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            progressBar.style.width = `${progress}%`;
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            fileItem.remove();
-            alert("Upload failed. Please try again.");
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            const studentDoc = await getDoc(doc(db, "students", auth.currentUser.uid));
-            const studentData = studentDoc.data();
-
-            await setDoc(doc(db, "submissions", `${auth.currentUser.uid}_${currentAssignmentId}`), {
-              studentID: studentData.studentID,
-              studentName: studentData.firstname,
-              assignmentId: currentAssignmentId,
-              fileURL: downloadURL,
-              status: "Pending",
-              submittedAt: serverTimestamp()
-            }, { merge: true });
-
+      // Set up listeners
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Progress handling
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const rounded = Math.round(progress);
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `${rounded}%`;
+          
+          if (progress > 95) {
             progressBar.style.backgroundColor = '#10b981';
-            cancelBtn.remove();
-            
-            setTimeout(() => {
-              closeUploadModal();
-              loadAssignments();
-            }, 1500);
           }
-        );
+        },
+        (error) => {
+          // Error handling
+          console.error('Upload failed:', error);
+          progressBar.style.backgroundColor = '#ef4444';
+          progressText.textContent = 'Failed';
+          fileItem.remove();
+          alert("Upload failed. Please try again.");
+        },
+        async () => {
+          // Completion handling
+          progressBar.style.width = '100%';
+          progressBar.style.backgroundColor = '#10b981';
+          progressText.textContent = 'Uploaded!';
+          cancelBtn.remove();
+          
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          // Get student and assignment data
+          const studentDoc = await getDoc(doc(db, "students", auth.currentUser.uid));
+          const studentData = studentDoc.data();
+          
+          const assignmentDoc = await getDoc(doc(db, "assignments", currentAssignmentId));
+          const assignmentData = assignmentDoc.data() || {};
+
+          // Add to Firestore
+          await setDoc(doc(db, "submissions", `${auth.currentUser.uid}_${currentAssignmentId}`), {
+            studentID: studentData.studentID,
+            studentName: studentData.firstname,
+            assignmentId: currentAssignmentId,
+            assignmentTitle: assignmentData.title || "Untitled Assignment",
+            lecturer_email: assignmentData.lecturer_email || "",
+            fileURL: downloadURL,
+            classCode: studentData.joinedClass?.code || "",
+            status: "Pending",
+            submittedAt: serverTimestamp()
+          }, { merge: true });
+
+          console.log("Submission recorded in Firestore");
+          document.getElementById("uploadModal").style.display = "none";
+          
+        } catch (error) {
+          console.error("Failed to update Firestore:", error);
+          alert("File uploaded but failed to record submission. Please contact support.");
+        }
       }
+              
+      );
+
+      // Cancel handler
+      cancelBtn.addEventListener('click', () => {
+        uploadTask.cancel();
+        progressBar.style.backgroundColor = '#ef4444';
+        progressText.textContent = 'Cancelled';
+        setTimeout(() => fileItem.remove(), 1000);
+      });
+
+    } catch (error) {
+      console.error('Upload initialization failed:', error);
+      fileItem.remove();
+      alert("Upload initialization failed. Please try again.");
+    }
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    if (event.target == document.getElementById("feedbackModal")) {
+      document.getElementById("feedbackModal").style.display = "none";
+      document.body.style.overflow = "auto";
+    }
+    if (event.target == document.getElementById("uploadModal")) {
+      closeUploadModal();
+    }
+  };
+
+  // Make functions available globally
+  window.showFeedback = showFeedback;
+  window.openUploadModal = openUploadModal;
+  window.closeUploadModal = closeUploadModal;
+
+  // Initialize when auth state changes
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loadAssignments();
+    }
+  });
+
     });
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      if (event.target == document.getElementById("feedbackModal")) {
-        document.getElementById("feedbackModal").style.display = "none";
-        document.body.style.overflow = "auto";
-      }
-      if (event.target == document.getElementById("uploadModal")) {
-        closeUploadModal();
-      }
-    };
-
-    // Make functions available globally
-    window.showFeedback = showFeedback;
-    window.openUploadModal = openUploadModal;
-    window.closeUploadModal = closeUploadModal;
-
-    // Initialize when auth state changes
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        loadAssignments();
-      }
-    });
   </script>
 </body>
 </html>

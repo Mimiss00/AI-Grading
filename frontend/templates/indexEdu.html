@@ -24,6 +24,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
 
 
+
+
   </head>
 
 <body>
@@ -167,6 +169,31 @@
   </div>
 </section>
 
+<!-- Add this right after the Recent Submissions section -->
+<section class="upcoming-meetings" id="students">
+  <div class="container">
+    <div class="row">
+      <div class="section-heading">
+        <h2>Class Students</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Program</th>
+            </tr>
+          </thead>
+          <tbody id="students-list">
+            <!-- Students will be loaded here by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
 
 
  
@@ -260,6 +287,59 @@
       }
     }
   });
+
+  auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    try {
+      const q = db.collection('lecturers').where('email', '==', user.email);
+      const snapshot = await q.get();
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        const lecturerCode = data.lecturerCode;
+
+        // ✅ Fetch students in the same class
+        const studentsSnap = await db.collection('students')
+          .where('joinedClass.code', '==', lecturerCode).get();
+
+        const studentListContainer = document.getElementById('students-list');
+        studentListContainer.innerHTML = ''; // Clear before adding
+
+        if (studentsSnap.empty) {
+          studentListContainer.innerHTML = '<p class="text-muted">No students found for this class.</p>';
+        } else {
+          studentsSnap.forEach(doc => {
+        const student = doc.data(); // ✅ This line is essential
+        console.log("Student:", student); // Optional debug
+
+const row = `
+  <tr>
+    <td colspan="4">
+      <div class="student-card">
+        <p><strong>Student ID:</strong> ${student.studentID || 'N/A'}</p>
+        <p><strong>Name:</strong> ${student.firstname || 'N/A'}</p>
+        <p><strong>Email:</strong> ${student.email || 'N/A'}</p>
+        <p><strong>Class Code:</strong> ${student.joinedClass?.code || 'N/A'}</p>
+      </div>
+    </td>
+  </tr>`;
+
+
+
+
+          
+        studentListContainer.innerHTML += row;
+      });
+
+
+
+        }
+      }
+    } catch (error) {
+      console.error("Error loading student list:", error);
+    }
+  }
+});
+
 </script>
 
 

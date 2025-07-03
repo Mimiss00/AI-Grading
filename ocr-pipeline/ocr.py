@@ -8,7 +8,7 @@ from google.cloud import vision
 from fpdf import FPDF
 
 # ========== CONFIGURATION ==========
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "ocr-pipeline/fyp-ai-3a972-OCR_API.json"  # ✅ Vision API key
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\Syamimi Suhaimi\Documents\VSCode\auto_grading_server\fyp-457511-098aad0915ba.json" # ✅ Vision API key
 POPPLER_PATH = r"C:\poppler\poppler-24.08.0\Library\bin"  # Adjust Poppler path
 
 # ========== IMAGE PREPROCESSING FUNCTIONS ==========
@@ -99,6 +99,29 @@ def process_pdf_local(pdf_path):
         all_text += f"\n--- Page {i+1} ---\n{cleaned_text}\n"
 
     return processed_images, all_text
+
+
+# ========== GRADING INTEGRATION ==========
+def grade_cpp_code(extracted_code, ground_truth_path):
+    # Load ground truth
+    with open(ground_truth_path, 'r') as f:
+        ground_truth = f.read()
+    
+    # Calculate accuracy (using previous script)
+    accuracy_results = calculate_accuracy(extracted_code, ground_truth)
+    
+    # Auto-grade based on thresholds
+    if accuracy_results['word_accuracy'] >= 95:
+        print("🟢 Excellent OCR Accuracy - Ready for Grading")
+    else:
+        print("🔴 Low OCR Accuracy - Manual Review Recommended")
+    
+    return accuracy_results
+
+# Usage
+ground_truth_file = "model_answer.cpp"  # Path to correct code
+grade_results = grade_cpp_code(extracted_code, ground_truth_file)
+
 
 def save_images_to_pdf(images, output_pdf_path):
     pdf = FPDF()
