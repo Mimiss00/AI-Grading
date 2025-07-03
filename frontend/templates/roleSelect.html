@@ -1,52 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Select Role</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/roleSelect.css') }}">
-
-    <!-- Optional: Google Fonts corrected -->
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;500;700&family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Select Role</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/roleSelect.css') }}">
 </head>
 <body>
-    <div class="header-container">
-        <div class="role-header">
-            <h1>Select Your Role</h1>
-            <p>Please choose whether you're a student or a lecturer to continue.</p>
-        </div>
-    </div>
-    <div class="container">
-        <div class="radio-tile-group">
+  <div class="main-wrapper">
+
+    <!-- LEFT: Role Selection -->
+    <div class="left-content">
+      <div class="left-inner">
+        <h1>Select Your Role</h1>
+        <p>Please choose whether you're a student or a lecturer to continue.</p>
+        <div class="container">
+          <div class="radio-tile-group">
             <div class="input-container">
-                <input id="lecturer" type="radio" name="radio" onclick="redirectToLogin('lecturer')">
-                <div class="radio-tile">
+              <input id="lecturer" type="radio" name="role">
+              <div class="radio-tile" onclick="redirectToLogin('lecturer')">
                 <img src="{{ url_for('static', filename='icon/lecturer.png') }}" alt="Lecturer Icon" class="role-icon">
-                    <label for="lecturer">Lecturer</label>
-                </div> 
+                <label for="lecturer">Lecturer</label>
+              </div>
+            </div>
+            <div class="input-container">
+              <input id="student" type="radio" name="role">
+              <div class="radio-tile" onclick="redirectToLogin('student')">
+                <img src="{{ url_for('static', filename='icon/student.png') }}" alt="Student Icon" class="role-icon">
+                <label for="student">Student</label>
+              </div>
             </div>
 
-            <div class="input-container">
-                <input id="student" type="radio" name="radio" onclick="redirectToLogin('student')">
-                <div class="radio-tile">
-                <img src="{{ url_for('static', filename='icon/student.png') }}" alt="Student Icon" class="role-icon">
-                    <label for="student">Student</label>
-                </div> 
-            </div>
+          </div>
         </div>
+      </div>
     </div>
 
-    <!-- Icons -->
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <!-- RIGHT: AI Illustration with Blended Background -->
+    <div class="right-illustration">
+      <div class="blob-bg"></div>
+      <img src="{{ url_for('static', filename='images/Artificial intelligence (1).gif') }}" alt="AI Illustration" class="ai-gif" />
+    </div>
 
-    <script>
-        function redirectToLogin(role) {
-            if (role === 'lecturer') {
-                window.location.href = '/lecturer/login';
-            } else if (role === 'student') {
-                window.location.href = '/student/login';
-            }
-        }
-    </script>
+  </div>
+
+<script>
+  function redirectToLogin(role) {
+    console.log("Selected role:", role); // ✅ Add this line to debug
+    document.body.style.opacity = '0.8';
+    setTimeout(() => {
+      if (role === 'lecturer') {
+        window.location.href = "/lecturer/login";
+      } else if (role === 'student') {
+        window.location.href = "/student/login";
+      }
+    }, 300);
+  }
+</script>
+
+  </script>
+
 </body>
 </html>

@@ -17,7 +17,7 @@
     <div class="wrapper">
         <nav class="nav">
             <div class="nav-logo">
-                <p>LOGO</p>
+                <img src="{{ url_for('static', filename='images/AI-logo.png') }}" alt="Logo" style="height: 120px; vertical-align: middle;">
             </div>
             <div class="nav-menu" id="navMenu">
                 <ul>
@@ -28,9 +28,7 @@
                 <button class="btn white-btn" id="loginBtn" onclick="login()">Sign In</button>
                 <button class="btn" id="registerBtn" onclick="register()">Sign Up</button>
             </div>
-            <div class="nav-menu-btn">
-                <i class="bx bx-menu" onclick="myMenuFunction()"></i>
-            </div>
+           
         </nav>
 
         <div class="form-box">

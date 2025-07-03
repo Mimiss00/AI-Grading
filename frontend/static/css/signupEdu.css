@@ -13,6 +13,8 @@ body{
     background-repeat: no-repeat;
     background-attachment: fixed;
     overflow: hidden;
+    background: url('/static/images/library.jpg') no-repeat center center fixed;
+
 }
 .wrapper{
     display: flex;
@@ -280,7 +282,7 @@ header{
 
 .eye-icon {
     position: absolute;
-    top: 35%;
+    top: 66%;
     right: 20px;
     transform: translateY(-50%);
     font-size: 18px;
@@ -288,30 +290,4 @@ header{
     cursor: pointer;
 }
 
-.input-box {
-    position: relative; /* ✅ This is the key fix */
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .input-box input {
-    width: 100%;
-    padding: 12px 40px 12px 35px; /* ✅ Add right padding to make space for eye icon */
-    border: none;
-    border-radius: 30px;
-    background: #e0e0e0;
-    font-size: 14px;
-  }
-  
-  .eye-icon {
-    position: absolute;
-    top: 35%;
-    right: 15px;
-    transform: translateY(-50%);
-    font-size: 18px;
-    color: #666;
-    cursor: pointer;
-    z-index: 2;
-  }
-  
 

@@ -13,6 +13,8 @@ body{
     background-repeat: no-repeat;
     background-attachment: fixed;
     overflow: hidden;
+    background: url('/static/images/library.jpg') no-repeat center center fixed;
+
 }
 .wrapper{
     display: flex;
