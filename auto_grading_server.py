@@ -165,7 +165,7 @@ def clean_answer_scheme_names(answer_scheme):
 
 def extract_total_marks(answer_scheme, fallback=10):
     # Check for section-based grading (e.g., → Output: 1.5/2 marks)
-    section_matches = re.findall(r'→\s*\w+:\s*\d+(?:\.\d+)?/(\d+(?:\.\d+)?)\s*marks?', answer_scheme, re.IGNORECASE)
+    section_matches = re.findall(r'→\s*\w+:\s*(\d+(?:\.\d+)?)/\d+(?:\.\d+)?\s*marks?', answer_scheme, re.IGNORECASE)
     
     if section_matches:
         total = sum(float(m) for m in section_matches)
@@ -243,54 +243,49 @@ def create_feedback_pdf(text, filename):
     margin = 40
     usable_width = width - 2 * margin
     y = height - margin
+    line_height = 12 
 
     c.setFont("Courier", 10)  # Monospaced font for code
 
     for line in text.split('\n'):
-        # Default to black for regular text
-        c.setFillColor(colors.black)
-        
-        # Check for correct/incorrect markers
-        if "// Correct" in line:
-            # Split the line into code and comment parts
-            parts = line.split("//")
-            if len(parts) >= 2:
-                # Draw code part in green
-                c.setFillColor(colors.green)
-                c.drawString(margin, y, parts[0].strip())
-                x_pos = margin + c.stringWidth(parts[0].strip())
+            # Handle text wrapping
+            text_lines = []
+            current_line = ""
+            
+            for word in line.split():
+                test_line = current_line + word + " "
+                if c.stringWidth(test_line) < usable_width:
+                    current_line = test_line
+                else:
+                    text_lines.append(current_line)
+                    current_line = word + " "
+            text_lines.append(current_line)
+            
+            # Draw each wrapped line
+            for wrapped_line in text_lines:
+                if "// Correct" in wrapped_line:
+                    parts = wrapped_line.split("//", 1)
+                    c.setFillColor(colors.green)
+                    c.drawString(margin, y, parts[0])
+                    c.setFillColor(colors.black)
+                    c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
+                elif "// Incorrect" in wrapped_line:
+                    parts = wrapped_line.split("//", 1)
+                    c.setFillColor(colors.red)
+                    c.drawString(margin, y, parts[0])
+                    c.setFillColor(colors.black)
+                    c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
+                else:
+                    c.setFillColor(colors.black)
+                    c.drawString(margin, y, wrapped_line)
                 
-                # Draw comment part in black
-                c.setFillColor(colors.black)
-                c.drawString(x_pos, y, " //" + "//".join(parts[1:]))
-            else:
-                c.drawString(margin, y, line)
-        elif "// Incorrect" in line:
-            # Split the line into code and comment parts
-            parts = line.split("//")
-            if len(parts) >= 2:
-                # Draw code part in red
-                c.setFillColor(colors.red)
-                c.drawString(margin, y, parts[0].strip())
-                x_pos = margin + c.stringWidth(parts[0].strip())
-                
-                # Draw comment part in black
-                c.setFillColor(colors.black)
-                c.drawString(x_pos, y, " //" + "//".join(parts[1:]))
-            else:
-                c.drawString(margin, y, line)
-        else:
-            # Regular line (no marking)
-            c.drawString(margin, y, line)
+                y -= line_height
+                if y < 50:
+                    c.showPage()
+                    y = height - margin
+                    c.setFont("Courier", 10)
         
-        y -= 10
-        if y < 50:  # Start new page
-            c.showPage()
-            y = height - margin
-            c.setFont("Courier", 10)
-
     c.save()
-
 
 # ========== MAIN PROCESS ==========
 def process_submission(submission_doc):
