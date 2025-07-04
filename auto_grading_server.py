@@ -205,7 +205,7 @@ def ask_openai_grading(answer_scheme, student_answer):
                 "Line 1 | int x; // Correct\n"
                 "Line 2 | double y // Incorrect - missing semicolon\n"
                 "→ Declarations: 1/2 marks\n\n"
-                "Overall Score: X/Y\n"
+                f"Overall Score: X/{total_marks}\n"
                 "Final Feedback: <summary>"
             )
             },
