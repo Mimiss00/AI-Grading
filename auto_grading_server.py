@@ -207,34 +207,36 @@ def ask_openai_grading(answer_scheme, student_answer):
     total_marks = extract_total_marks(answer_scheme)
 
     messages = [
-                {
-               "role": "system",
-                "content": (
-                    f"You are a C++ code grader. Follow these rules STRICTLY:\n"
-                    "1. Group marks into these sections: Declarations, Inputs, Computation, Output — based on code structure.\n"
-                    "   Use your judgment to assign inline marks to each section fairly.\n"
-                    "2. DO NOT penalize for variable name differences (e.g., PAYRATE vs payrate), "
-                    "3. Format exactly like this example:\n"
-                    "   Line 1 | int x; // Correct\n"
-                    "   Line 2 | double y // Incorrect - missing semicolon\n"
-                    "   → Declarations: 1/2 marks\n\n"
-                   f"IMPORTANT: The total possible mark is {total_marks} only. DO NOT change this.\n"
-                    f"NEVER assign more than {total_marks} marks in total, and do not split into sections that exceed this number.\n"
-                    f"All section subtotals must add up to {total_marks} exactly.\n"
-                    f"Overall Score: X/{total_marks}\n"
-                    "Final Feedback: <summary>"
-                )
-
-            },
+        {
+            "role": "system",
+            "content": (
+                f"You are a C++ code grader. Follow these rules STRICTLY:\n"
+                "1. Group marks into: Declarations, Inputs, Computation, Output.\n"
+                "2. **Ignore variable name differences** (e.g., `PAYRATE` vs `Payrole`).\n"
+                "3. **Ignore output message wording** (only check if output is syntactically correct).\n"
+                "4. **Multi-line declarations (e.g., `double x, y;`) are valid** and should not be penalized.\n"
+                "5. Deduct marks **only** for:\n"
+                "   - Missing semicolons\n"
+                "   - Undefined variables (e.g., using `PI` without `const double PI = 3.14;`)\n"
+                "   - Incorrect logic (e.g., wrong formula for `houseArea`)\n"
+                "6. Format feedback like this example:\n"
+                "   Line 1 | int x; // Correct\n"
+                "   Line 2 | double y // Incorrect - missing semicolon\n"
+                "   → Declarations: 1/2 marks\n\n"
+                f"Total possible marks: {total_marks}. **DO NOT exceed this.**\n"
+                f"All section marks must add up to {total_marks} exactly.\n"
+                "Overall Score: X/{total_marks}\n"
+                "Final Feedback: <concise summary>"
+            )
+        },
         {
             "role": "user",
             "content": (
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
-                f"Grade this based on the model answer. Format as instructed. Do not assume task."
-                f"If the logic is unrelated or solves a different problem, give 0 marks and explain that the solution does not match the task.\n"
-                f"Do not give marks for syntax if the logic is for a completely different problem.\n"       
-                f"Only use a total mark of {total_marks} when giving the final score."
+                "Grade strictly based on **syntax and logic**, NOT exact wording or variable names.\n"
+                "If the student's code **matches the model answer's logic**, give full marks.\n"
+                "If the code is **unrelated or solves a different problem**, give 0 marks."
             )
         }
     ]
