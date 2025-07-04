@@ -163,10 +163,31 @@ def clean_answer_scheme_names(answer_scheme):
     # Remove lines that mention variable name corrections
     return re.sub(r'//.*should be.*', '', answer_scheme, flags=re.IGNORECASE)
 
-def extract_total_marks(answer_scheme):
-    mark_values = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', answer_scheme, re.IGNORECASE)
-    total = sum(float(m) for m in mark_values)
-    return int(round(total)) if total else 10
+def extract_total_marks(answer_scheme, fallback=10):
+    # Check for section-based grading (e.g., → Output: 1.5/2 marks)
+    section_matches = re.findall(r'→\s*\w+:\s*\d+(?:\.\d+)?/(\d+(?:\.\d+)?)\s*marks?', answer_scheme, re.IGNORECASE)
+    
+    if section_matches:
+        total = sum(float(m) for m in section_matches)
+        return int(round(total))
+    
+    # Otherwise, sum all inline marks (avoid section header lines)
+    inline_lines = [
+        line for line in answer_scheme.splitlines()
+        if not re.search(r'→\s*\w+:\s*\d+(?:\.\d+)?/\d+(?:\.\d+)?\s*marks?', line)
+    ]
+    inline_mark_values = []
+    for line in inline_lines:
+        marks_found = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', line, re.IGNORECASE)
+        inline_mark_values.extend(marks_found)
+    
+    if inline_mark_values:
+        total = sum(float(m) for m in inline_mark_values)
+        return int(round(total))
+    
+    # Fallback if no marks found at all
+    return fallback
+
 
 def ask_openai_grading(answer_scheme, student_answer):
     answer_scheme = clean_answer_scheme_names(answer_scheme)
@@ -262,7 +283,7 @@ def create_feedback_pdf(text, filename):
             # Regular line (no marking)
             c.drawString(margin, y, line)
         
-        y -= 14
+        y -= 10
         if y < 50:  # Start new page
             c.showPage()
             y = height - margin
