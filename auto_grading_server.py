@@ -163,30 +163,26 @@ def clean_answer_scheme_names(answer_scheme):
     # Remove lines that mention variable name corrections
     return re.sub(r'//.*should be.*', '', answer_scheme, flags=re.IGNORECASE)
 
-def extract_total_marks(answer_scheme, fallback=10):
-    # Check for section-based grading (e.g., → Output: 1.5/2 marks)
-    section_matches = re.findall(r'→\s*\w+:\s*(\d+(?:\.\d+)?)/\d+(?:\.\d+)?\s*marks?', answer_scheme, re.IGNORECASE)
-    
-    if section_matches:
-        total = sum(float(m) for m in section_matches)
-        return int(round(total))
-    
-    # Otherwise, sum all inline marks (avoid section header lines)
-    inline_lines = [
-        line for line in answer_scheme.splitlines()
-        if not re.search(r'→\s*\w+:\s*\d+(?:\.\d+)?/\d+(?:\.\d+)?\s*marks?', line)
-    ]
+
+def extract_total_marks(answer_scheme):
+    """
+    Extract total marks ONLY from lines with 'X mark' or 'X marks'.
+    Ignores section summaries like '→ Input: 2/3 marks'.
+    """
     inline_mark_values = []
-    for line in inline_lines:
-        marks_found = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', line, re.IGNORECASE)
-        inline_mark_values.extend(marks_found)
-    
-    if inline_mark_values:
-        total = sum(float(m) for m in inline_mark_values)
-        return int(round(total))
-    
-    # Fallback if no marks found at all
-    return fallback
+
+    for line in answer_scheme.splitlines():
+        # Skip lines like: → Input: 2/3 marks
+        if re.search(r'→\s*\w+:\s*\d+(?:\.\d+)?/\d+(?:\.\d+)?\s*marks?', line):
+            continue
+
+        # Extract actual marks: e.g., '1.5 marks', '1 mark'
+        matches = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', line, re.IGNORECASE)
+        inline_mark_values.extend(matches)
+
+    total = sum(float(m) for m in inline_mark_values)
+    return int(round(total))
+
 
 
 def ask_openai_grading(answer_scheme, student_answer):
@@ -202,7 +198,8 @@ def ask_openai_grading(answer_scheme, student_answer):
                 "role": "system",
             "content": (
                 "You are a C++ code grader. Follow these rules STRICTLY:\n"
-                "1. GROUP MARKS BY SECTION ONLY (declarations, inputs, computation, output)\n"
+                "1. Group marks into these sections: Declarations, Inputs, Computation, Output — based on code structure.\n"
+                "   Use your judgment to assign inline marks to each section fairly.\n"
                 "2. NEVER mark down for variable name differences (e.g., accept both payrate and PAYRATE)\n"
                 "3. Format exactly like this example:\n"
                 "Line 1 | int x; // Correct\n"
@@ -243,48 +240,38 @@ def create_feedback_pdf(text, filename):
     margin = 40
     usable_width = width - 2 * margin
     y = height - margin
-    line_height = 12 
+    line_height = 14  # Increased slightly for better spacing
 
-    c.setFont("Courier", 10)  # Monospaced font for code
+    c.setFont("Courier", 10)
 
     for line in text.split('\n'):
-            # Handle text wrapping
-            text_lines = []
-            current_line = ""
-            
-            for word in line.split():
-                test_line = current_line + word + " "
-                if c.stringWidth(test_line) < usable_width:
-                    current_line = test_line
-                else:
-                    text_lines.append(current_line)
-                    current_line = word + " "
-            text_lines.append(current_line)
-            
-            # Draw each wrapped line
-            for wrapped_line in text_lines:
-                if "// Correct" in wrapped_line:
-                    parts = wrapped_line.split("//", 1)
-                    c.setFillColor(colors.green)
-                    c.drawString(margin, y, parts[0])
-                    c.setFillColor(colors.black)
-                    c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
-                elif "// Incorrect" in wrapped_line:
-                    parts = wrapped_line.split("//", 1)
-                    c.setFillColor(colors.red)
-                    c.drawString(margin, y, parts[0])
-                    c.setFillColor(colors.black)
-                    c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
-                else:
-                    c.setFillColor(colors.black)
-                    c.drawString(margin, y, wrapped_line)
-                
-                y -= line_height
-                if y < 50:
-                    c.showPage()
-                    y = height - margin
-                    c.setFont("Courier", 10)
-        
+        # Wrap line by character width
+        wrapped_lines = wrap(line, width=90)  # You can tune 90 for more or fewer chars
+
+        for wrapped_line in wrapped_lines:
+            if y < 50:
+                c.showPage()
+                c.setFont("Courier", 10)
+                y = height - margin
+
+            if "// Correct" in wrapped_line:
+                parts = wrapped_line.split("//", 1)
+                c.setFillColor(colors.green)
+                c.drawString(margin, y, parts[0])
+                c.setFillColor(colors.black)
+                c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
+            elif "// Incorrect" in wrapped_line:
+                parts = wrapped_line.split("//", 1)
+                c.setFillColor(colors.red)
+                c.drawString(margin, y, parts[0])
+                c.setFillColor(colors.black)
+                c.drawString(margin + c.stringWidth(parts[0]), y, "//" + parts[1])
+            else:
+                c.setFillColor(colors.black)
+                c.drawString(margin, y, wrapped_line)
+
+            y -= line_height
+
     c.save()
 
 # ========== MAIN PROCESS ==========
