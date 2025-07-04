@@ -230,6 +230,8 @@ def ask_openai_grading(answer_scheme, student_answer):
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
                 f"Grade this based on the model answer. Format as instructed. Do not assume task."
+                f"If the logic is unrelated or solves a different problem, give 0 marks and explain that the solution does not match the task.\n"
+                f"Do not give marks for syntax if the logic is for a completely different problem.\n"       
                 f"Only use a total mark of {total_marks} when giving the final score."
             )
         }
