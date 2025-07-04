@@ -60,7 +60,7 @@ firebase_admin.initialize_app(cred, {
 db = firestore.client()
 bucket = storage.bucket()
 
-POPPLER_PATH = r"C:\poppler\poppler-24.08.0\Library\bin"  # Change to your Poppler path
+POPPLER_PATH = "/usr/bin"   # Change to your Poppler path
 
 # ========== IMAGE PREPROCESSING ==========
 def increase_contrast(img):
@@ -310,9 +310,21 @@ def process_submission(submission_doc):
 
     if local_student_pdf.lower().endswith(".pdf"):
         try:
-            images = convert_from_path(local_student_pdf, dpi=400, poppler_path=POPPLER_PATH)
+            images = convert_from_path(
+                local_student_pdf,
+                dpi=400,
+                poppler_path=POPPLER_PATH if os.path.exists(POPPLER_PATH) else None
+            )
         except Exception as e:
-            print(f"❌ Failed to process PDF: {e}")
+            print(f"PDF processing error: {str(e)}")
+            # Fallback to pure Python PDF reader
+            try:
+                import PyPDF2
+                pdf_reader = PyPDF2.PdfReader(local_student_pdf)
+                page_count = len(pdf_reader.pages)
+                print(f"Got {page_count} pages using PyPDF2 fallback")
+            except Exception as fallback_e:
+                print(f"Fallback failed: {str(fallback_e)}")
             return
     elif local_student_pdf.lower().endswith((".jpg", ".jpeg", ".png")):
         from PIL import Image
