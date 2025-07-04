@@ -164,24 +164,37 @@ def clean_answer_scheme_names(answer_scheme):
     return re.sub(r'//.*should be.*', '', answer_scheme, flags=re.IGNORECASE)
 
 
+import re
+
 def extract_total_marks(answer_scheme):
     """
     Extract total marks ONLY from lines with 'X mark' or 'X marks'.
-    Ignores section summaries like '→ Input: 2/3 marks'.
+    Works whether input is full JSON or just the raw answer_scheme text.
+    Skips section summaries like '→ Input: 2/3 marks'.
     """
+
+    # If passed a dictionary (from OCR/Roboflow/Firestore), extract 'text'
+    if isinstance(answer_scheme, dict):
+        if "text" in answer_scheme:
+            answer_scheme = answer_scheme["text"]
+        else:
+            raise ValueError("Invalid answer_scheme JSON format: missing 'text' field.")
+
     inline_mark_values = []
 
+    # Process each line
     for line in answer_scheme.splitlines():
-        # Skip lines like: → Input: 2/3 marks
+        # Skip section breakdowns like → Inputs: 2/3 marks
         if re.search(r'→\s*\w+:\s*\d+(?:\.\d+)?/\d+(?:\.\d+)?\s*marks?', line):
             continue
 
-        # Extract actual marks: e.g., '1.5 marks', '1 mark'
+        # Find inline marks: e.g. '1 mark', '1.5 marks'
         matches = re.findall(r'(\d+(?:\.\d+)?)\s*marks?', line, re.IGNORECASE)
         inline_mark_values.extend(matches)
 
     total = sum(float(m) for m in inline_mark_values)
     return int(round(total))
+
 
 
 
