@@ -195,19 +195,21 @@ def ask_openai_grading(answer_scheme, student_answer):
 
     messages = [
                 {
-                "role": "system",
-            "content": (
-                "You are a C++ code grader. Follow these rules STRICTLY:\n"
-                "1. Group marks into these sections: Declarations, Inputs, Computation, Output — based on code structure.\n"
-                "   Use your judgment to assign inline marks to each section fairly.\n"
-                "2. NEVER mark down for variable name differences (e.g., accept both payrate and PAYRATE)\n"
-                "3. Format exactly like this example:\n"
-                "Line 1 | int x; // Correct\n"
-                "Line 2 | double y // Incorrect - missing semicolon\n"
-                "→ Declarations: 1/2 marks\n\n"
-                f"Overall Score: X/{total_marks}\n"
-                "Final Feedback: <summary>"
-            )
+               "role": "system",
+                "content": (
+                    f"You are a C++ code grader. Follow these rules STRICTLY:\n"
+                    "1. Group marks into these sections: Declarations, Inputs, Computation, Output — based on code structure.\n"
+                    "   Use your judgment to assign inline marks to each section fairly.\n"
+                    "2. NEVER mark down for variable name differences (e.g., accept both payrate and PAYRATE)\n"
+                    "3. Format exactly like this example:\n"
+                    "   Line 1 | int x; // Correct\n"
+                    "   Line 2 | double y // Incorrect - missing semicolon\n"
+                    "   → Declarations: 1/2 marks\n\n"
+                    f"   DO NOT invent or change the total marks. Use only: {total_marks}.\n"
+                    f"Overall Score: X/{total_marks}\n"
+                    "Final Feedback: <summary>"
+                )
+
             },
         {
             "role": "user",
@@ -215,6 +217,7 @@ def ask_openai_grading(answer_scheme, student_answer):
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
                 f"Grade this based on the model answer. Format as instructed. Do not assume task."
+                f"Only use a total mark of {total_marks} when giving the final score."
             )
         }
     ]
