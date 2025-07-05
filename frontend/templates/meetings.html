@@ -697,6 +697,30 @@ const handleFileUpload = async (file) => {
 
     });
 
+      onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const studentRef = doc(db, "students", user.uid);
+        const studentSnap = await getDoc(studentRef);
+
+        if (studentSnap.exists()) {
+          const data = studentSnap.data();
+          document.getElementById('studentName').textContent = data.firstname || "No Name";
+          document.getElementById('studentEmail').textContent = data.email || user.email;
+          document.getElementById('studentID').textContent = "ID: " + (data.studentID || "N/A");
+          document.getElementById('studentClass').textContent = "Class: " + (data.joinedClass?.code || "N/A");
+        } else {
+          document.getElementById('studentName').textContent = "Unknown";
+          document.getElementById('studentEmail').textContent = user.email;
+          document.getElementById('studentID').textContent = "ID: N/A";
+          document.getElementById('studentClass').textContent = "Class: N/A";
+        }
+      } catch (err) {
+        console.error("Error fetching student profile:", err);
+      }
+    }
+  });
+
   </script>
 </body>
 </html>
