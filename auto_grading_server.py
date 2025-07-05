@@ -23,6 +23,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from textwrap import wrap
+import datetime
 
 
 
@@ -164,7 +165,8 @@ def clean_answer_scheme_names(answer_scheme):
     return re.sub(r'//.*should be.*', '', answer_scheme, flags=re.IGNORECASE)
 
 
-import re
+timestamp = datetime.datetime.now().isoformat()
+
 
 def extract_total_marks(answer_scheme):
     """
@@ -236,6 +238,7 @@ def ask_openai_grading(answer_scheme, student_answer):
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
                 f"Grade this strictly based on the logic of the model answer. Do NOT deduct marks for style, semicolons, spacing, or case.\n"
+                f"Timestamp: {timestamp}\n"
                 f"If logic is unrelated to the task, give 0. Be fair and avoid nitpicking syntax.\n"
                 f"Use exactly {total_marks} marks total."
             )
