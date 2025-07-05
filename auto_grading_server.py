@@ -207,38 +207,40 @@ def ask_openai_grading(answer_scheme, student_answer):
     total_marks = extract_total_marks(answer_scheme)
 
     messages = [
-                {
-               "role": "system",
-                "content": (
+        {
+            "role": "system",
+            "content": (
                 f"You are a C++ code grader. Follow these rules STRICTLY:\n"
-                "1. Grade in 4 sections: Declarations, Inputs, Computation, Output.\n"
-                "2. DO NOT penalize for small syntax issues like spacing, quote types, or missing semicolons — unless they change the logic.\n"
-                "3. DO NOT penalize for variable name differences (e.g., PAYRATE vs payrate vs Payrole), as long as the same variable is used consistently.\n"
-                "4. ONLY deduct marks for incorrect logic, wrong formula, or incomplete implementation.\n"
-                "5. If the code solves a completely unrelated problem, assign 0 marks and explain clearly.\n\n"
-                "Grading Format:\n"
-                "Line 1 | int x; // Correct\n"
-                "Line 2 | double y // Incorrect - missing semicolon\n"
-                "→ Declarations: 1/2 marks\n\n"
-                f"IMPORTANT: Use exactly {total_marks} marks in total. Do NOT assume or invent marks or tasks.\n"
+                "1. Grade in ONLY 4 sections: Declarations, Inputs, Computation, Output.\n"
+                "2. DO NOT penalize for missing semicolons, wrong quote types, spacing, or stylistic syntax issues unless they make the logic wrong.\n"
+                "3. DO NOT penalize for different variable names (e.g., PAYRATE vs payrole), if used consistently throughout.\n"
+                "4. DO NOT give feedback like 'meaningless line'. Just ignore it.\n"
+                "5. ONLY deduct marks if the logic is clearly incorrect or unrelated to the model answer.\n"
+                "6. If the solution solves a different problem (e.g., vacation instead of lawn wages), assign 0 and explain.\n\n"
+                "Use this exact format:\n"
+                "Line X | code // Correct\n"
+                "Line Y | code // Incorrect - <reason>\n"
+                "→ Declarations: X/Y marks\n"
+                "→ Inputs: X/Y marks\n"
+                "→ Computation: X/Y marks\n"
+                "→ Output: X/Y marks\n"
+                f"IMPORTANT: Final score must be out of {total_marks} marks only.\n"
                 f"Overall Score: X/{total_marks}\n"
                 "Final Feedback: <summary>"
             )
-
-            },
+        },
         {
             "role": "user",
             "content": (
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
-                f"Grade this based on the model answer. Do NOT assume a different task.\n"
-                f"Give partial marks for reasonable syntax, even if not identical.\n"
-                f"Do NOT penalize for case sensitivity, spacing, or consistent variable renaming.\n"
-                f"If logic is unrelated (e.g., different problem), assign 0.\n"
-                f"Total must be exactly {total_marks} marks."
+                f"Grade this strictly based on the logic of the model answer. Do NOT deduct marks for style, semicolons, spacing, or case.\n"
+                f"If logic is unrelated to the task, give 0. Be fair and avoid nitpicking syntax.\n"
+                f"Use exactly {total_marks} marks total."
             )
         }
     ]
+
 
     try:
         response = client.chat.completions.create(
