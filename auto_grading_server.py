@@ -217,6 +217,7 @@ def ask_openai_grading(answer_scheme, student_answer):
                 "4. DO NOT give feedback like 'meaningless line'. Just ignore it.\n"
                 "5. ONLY deduct marks if the logic is clearly incorrect or unrelated to the model answer.\n"
                 "6. If the solution solves a different problem (e.g., vacation instead of lawn wages), assign 0 and explain.\n\n"
+                "7. If multiple variables are declared in one line (e.g., `double a, b, c;`), treat them as one correct declaration — do not split them across lines."
                 "Use this exact format:\n"
                 "Line X | code // Correct\n"
                 "Line Y | code // Incorrect - <reason>\n"
