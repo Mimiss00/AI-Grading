@@ -170,7 +170,7 @@ def extract_total_marks(answer_scheme):
     """
     Extract total marks ONLY from lines with 'X mark' or 'X marks'.
     Works whether input is full JSON or just the raw answer_scheme text.
-    Skips section summaries like '→ Input: 2/3 marks'.
+    Skips section summaries like '→ Input: 2/3 marks' or 'Output: 1.5 marks'.
     """
 
     # If passed a dictionary (from OCR/Roboflow/Firestore), extract 'text'
@@ -207,36 +207,35 @@ def ask_openai_grading(answer_scheme, student_answer):
     total_marks = extract_total_marks(answer_scheme)
 
     messages = [
-        {
-            "role": "system",
-            "content": (
+                {
+               "role": "system",
+                "content": (
                 f"You are a C++ code grader. Follow these rules STRICTLY:\n"
-                "1. Group marks into: Declarations, Inputs, Computation, Output.\n"
-                "2. **Ignore variable name differences** (e.g., `PAYRATE` vs `Payrole`).\n"
-                "3. **Ignore output message wording** (only check if output is syntactically correct).\n"
-                "4. **Multi-line declarations (e.g., `double x, y;`) are valid** and should not be penalized.\n"
-                "5. Deduct marks **only** for:\n"
-                "   - Missing semicolons\n"
-                "   - Undefined variables (e.g., using `PI` without `const double PI = 3.14;`)\n"
-                "   - Incorrect logic (e.g., wrong formula for `houseArea`)\n"
-                "6. Format feedback like this example:\n"
-                "   Line 1 | int x; // Correct\n"
-                "   Line 2 | double y // Incorrect - missing semicolon\n"
-                "   → Declarations: 1/2 marks\n\n"
-                f"Total possible marks: {total_marks}. **DO NOT exceed this.**\n"
-                f"All section marks must add up to {total_marks} exactly.\n"
-                "Overall Score: X/{total_marks}\n"
-                "Final Feedback: <concise summary>"
+                "1. Grade in 4 sections: Declarations, Inputs, Computation, Output.\n"
+                "2. DO NOT penalize for small syntax issues like spacing, quote types, or missing semicolons — unless they change the logic.\n"
+                "3. DO NOT penalize for variable name differences (e.g., PAYRATE vs payrate vs Payrole), as long as the same variable is used consistently.\n"
+                "4. ONLY deduct marks for incorrect logic, wrong formula, or incomplete implementation.\n"
+                "5. If the code solves a completely unrelated problem, assign 0 marks and explain clearly.\n\n"
+                "Grading Format:\n"
+                "Line 1 | int x; // Correct\n"
+                "Line 2 | double y // Incorrect - missing semicolon\n"
+                "→ Declarations: 1/2 marks\n\n"
+                f"IMPORTANT: Use exactly {total_marks} marks in total. Do NOT assume or invent marks or tasks.\n"
+                f"Overall Score: X/{total_marks}\n"
+                "Final Feedback: <summary>"
             )
-        },
+
+            },
         {
             "role": "user",
             "content": (
                 f"Model Answer:\n{answer_scheme.strip()}\n\n"
                 f"Student Submission:\n{numbered_student_answer.strip()}\n\n"
-                "Grade strictly based on **syntax and logic**, NOT exact wording or variable names.\n"
-                "If the student's code **matches the model answer's logic**, give full marks.\n"
-                "If the code is **unrelated or solves a different problem**, give 0 marks."
+                f"Grade this based on the model answer. Do NOT assume a different task.\n"
+                f"Give partial marks for reasonable syntax, even if not identical.\n"
+                f"Do NOT penalize for case sensitivity, spacing, or consistent variable renaming.\n"
+                f"If logic is unrelated (e.g., different problem), assign 0.\n"
+                f"Total must be exactly {total_marks} marks."
             )
         }
     ]
