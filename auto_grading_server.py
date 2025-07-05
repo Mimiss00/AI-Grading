@@ -227,7 +227,7 @@ def ask_openai_grading(answer_scheme, student_answer):
                 f"IMPORTANT: Final score must be out of {total_marks} marks only.\n"
                 f"Overall Score: X/{total_marks}\n"
                 "Final Feedback: <summary>"
-            )
+                    )
         },
         {
             "role": "user",
